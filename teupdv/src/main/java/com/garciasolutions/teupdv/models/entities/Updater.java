@@ -1,8 +1,6 @@
 package com.garciasolutions.teupdv.models.entities;
 
-
 import javafx.scene.control.Alert;
-
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -10,8 +8,7 @@ import java.util.Properties;
 
 public class Updater {
 
-    private static final String VERSION_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/v1.0.2/version.properties";
-    private static final String DOWNLOAD_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/v1.0.2/teupdv.jar";
+    private static final String BASE_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/";
     private static final String LOCAL_VERSION_FILE = "version.properties";
     private static final String LOCAL_SOFTWARE_PATH = "teupdv.jar";
 
@@ -27,7 +24,7 @@ public class Updater {
             return false;
         } else if (isNewerVersion(remoteVersion, localVersion)) {
             System.out.println("Nova versão disponível. Atualizando...");
-            downloadAndUpdateSoftware();
+            downloadAndUpdateSoftware(remoteVersion);
             return true;
         } else {
             System.out.println("O software já está atualizado.");
@@ -36,7 +33,6 @@ public class Updater {
     }
 
     private static String getLocalVersion() throws IOException {
-        // Leitura do arquivo version.properties localizado no diretório atual
         try (InputStream input = new FileInputStream(LOCAL_VERSION_FILE)) {
             Properties properties = new Properties();
             properties.load(input);
@@ -45,7 +41,7 @@ public class Updater {
     }
 
     private static String getRemoteVersion() throws IOException {
-        URL url = new URL(VERSION_URL);
+        URL url = new URL(BASE_URL + "version.properties");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
 
@@ -67,16 +63,15 @@ public class Updater {
         return remoteVersion.compareTo(localVersion) > 0;
     }
 
-    private static void downloadAndUpdateSoftware() throws IOException {
-        // Caminho para o novo JAR
-        URL url = new URL(DOWNLOAD_URL);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
+    private static void downloadAndUpdateSoftware(String version) throws IOException {
+        // Download novo JAR
+        URL jarUrl = new URL(BASE_URL + version + "/teupdv.jar");
+        HttpURLConnection jarConnection = (HttpURLConnection) jarUrl.openConnection();
+        jarConnection.setRequestMethod("GET");
 
-        int responseCode = connection.getResponseCode();
+        int responseCode = jarConnection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
-            // Baixar o novo JAR
-            try (InputStream input = connection.getInputStream();
+            try (InputStream input = jarConnection.getInputStream();
                  FileOutputStream output = new FileOutputStream(LOCAL_SOFTWARE_PATH)) {
                 byte[] buffer = new byte[4096];
                 int bytesRead;
@@ -86,7 +81,7 @@ public class Updater {
             }
 
             // Atualizar o arquivo version.properties
-            URL versionUrl = new URL(VERSION_URL);
+            URL versionUrl = new URL(BASE_URL + version + "/version.properties");
             HttpURLConnection versionConnection = (HttpURLConnection) versionUrl.openConnection();
             versionConnection.setRequestMethod("GET");
 
@@ -106,8 +101,7 @@ public class Updater {
             }
 
             System.out.println("Atualização concluída.");
-            // Adicionar um aviso para reiniciar o software
-            System.out.println("Por favor, reinicie o software para aplicar a atualização.");
+            showAlert(Alert.AlertType.INFORMATION, "Atualização", "A atualização foi concluída com sucesso. Por favor, reinicie o software para aplicar a atualização.");
         } else {
             throw new IOException("Failed to download update. HTTP response code: " + responseCode);
         }
@@ -119,6 +113,4 @@ public class Updater {
         alert.setContentText(content);
         alert.showAndWait();
     }
-
-
 }
