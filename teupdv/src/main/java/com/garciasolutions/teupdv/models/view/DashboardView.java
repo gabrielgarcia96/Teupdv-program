@@ -80,10 +80,10 @@ public class DashboardView extends Application {
         MenuItem registerUserItem = new MenuItem("Cadastrar Usuário");
         MenuItem updateItem = new MenuItem("Atualizar Software");
 
-        menuSettings.getItems().addAll(cadFiscal, registerUserItem);
+        menuSettings.getItems().addAll(cadFiscal, registerUserItem, updateItem);
         menuBar.getMenus().addAll(menuProducts, menuReports, menuSettings);
         menuProducts.getItems().setAll(cadProducts, listProducts);
-        menuReports.getItems().setAll(generateReport, generateCancelationReport, updateItem);
+        menuReports.getItems().setAll(generateReport, generateCancelationReport);
 
         // Dashboard Layout
         BorderPane mainLayout = new BorderPane();
