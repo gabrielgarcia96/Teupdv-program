@@ -195,12 +195,29 @@ public class DashboardView extends Application {
         // update software
         updateItem.setOnAction(e -> {
             try {
-                Updater.checkForUpdates();
+                // Executa a atualização e obtém o feedback
+                boolean updated = Updater.checkForUpdates();
+
+                if (updated) {
+                    // Notifique o usuário sobre a necessidade de reiniciar
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Atualização Concluída");
+                    alert.setHeaderText(null);
+                    alert.setContentText("A atualização foi concluída com sucesso. Por favor, reinicie o software para aplicar as mudanças.");
+                    alert.showAndWait();
+
+                    // Opcional: Reiniciar o aplicativo programaticamente
+                    System.exit(0);
+                }
+
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Erro de Atualização");
+                alert.setHeaderText(null);
+                alert.setContentText("Ocorreu um erro durante a atualização: " + ex.getMessage());
+                alert.showAndWait();
             }
         });
-
 
 
         // Actions for Menu Items
