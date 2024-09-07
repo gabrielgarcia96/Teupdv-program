@@ -81,7 +81,7 @@ public class LoginView extends Application {
         scene.getStylesheets().add(getClass().getResource("/loginstyle.css").toExternalForm());
 
         stage.setScene(scene);
-        stage.setTitle("Login TEU PDV");
+        stage.setTitle("Login");
         stage.show();
     }
 
