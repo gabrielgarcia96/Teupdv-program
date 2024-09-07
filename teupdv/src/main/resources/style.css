@@ -1,0 +1,83 @@
+/* Estilos gerais */
+.root {
+    -fx-font-family: "Arial";
+    -fx-font-size: 14px;
+    -fx-background-color: #f4f4f4;
+}
+
+/* Menu */
+.menu-bar {
+   // -fx-background-color: #333;
+  //  -fx-text-fill: #fff;
+   // -fx-padding: 5 10; /* Adiciona padding ao menu bar para mais espaçamento */
+}
+
+.menu {
+   // -fx-background-color: #444;
+   // -fx-text-fill: #fff;
+   // -fx-padding: 5 10; /* Adiciona padding aos menus */
+}
+
+.menu-item {
+    //-fx-background-color: #555;
+   // -fx-text-fill: #fff;
+   // -fx-padding: 5 10; /* Adiciona padding aos itens do menu */
+}
+
+.menu-item:hover {
+    -fx-background-color: #d3d3d3;
+}
+
+/* Botões */
+.button {
+    -fx-background-color: #007bff;
+    -fx-text-fill: #fff;
+    -fx-font-size: 12px;
+    -fx-padding: 6 16;
+    -fx-border-radius: 5; /* Adiciona borda arredondada aos botões */
+    -fx-background-radius: 5; /* Adiciona borda arredondada ao fundo do botão */
+}
+
+.button:hover {
+    -fx-background-color: #0056b3;
+}
+
+/* Labels */
+.label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+}
+
+/* TextField e ListView */
+.text-field {
+    -fx-padding: 5; /* Adiciona um pouco mais de espaço interno */
+    -fx-border-color: #ccc;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5; /* Adiciona borda arredondada ao fundo do campo de texto */
+    -fx-pref-width: 200; /* Define a largura preferencial do TextField */
+}
+
+.list-view {
+    -fx-border-color: #ddd;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5; /* Adiciona borda arredondada ao fundo da lista */
+}
+
+/* VBox e HBox */
+.vbox, .hbox {
+    -fx-padding: 10;
+    -fx-spacing: 10; /* Ajuste o espaçamento entre os elementos */
+}
+
+/* Stage Titles */
+.stage {
+    -fx-title-text-fill: #007bff;
+}
+
+/* Container para o TextField e botão de busca */
+.search-container {
+    -fx-padding: 10; /* Padding ao redor do container */
+    -fx-spacing: 10; /* Espaçamento entre o TextField e o botão */
+    -fx-alignment: center-left; /* Alinhamento vertical dos itens */
+    -fx-margin: 20 0 0 0; /* Margem superior para afastar do topo do menu */
+}
