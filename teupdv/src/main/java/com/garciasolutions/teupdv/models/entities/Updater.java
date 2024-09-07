@@ -11,9 +11,10 @@ import java.util.Properties;
 
 public class Updater {
 
+
     private static final String API_URL = "https://api.github.com/repos/gabrielgarcia96/Teupdv-program/releases";
-    private static final String LOCAL_VERSION_FILE = "version.properties";
-    private static final String LOCAL_SOFTWARE_PATH = "teupdv.jar";
+    private static final String LOCAL_SOFTWARE_PATH = "C:/Program Files (x86)/teupdv/teupdv.jar";
+    private static final String LOCAL_VERSION_FILE = "C:/Program Files (x86)/teupdv/src/main/resources/version.properties";
 
     public static boolean checkForUpdates() throws IOException {
         String localVersion = getLocalVersion();
