@@ -208,6 +208,13 @@ public class DashboardView extends Application {
 
                     // Opcional: Reiniciar o aplicativo programaticamente
                     System.exit(0);
+                } else {
+                    // Notifique o usuário que o software já está atualizado
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Nenhuma Atualização Necessária");
+                    alert.setHeaderText(null);
+                    alert.setContentText("O software já está na versão mais recente.");
+                    alert.showAndWait();
                 }
 
             } catch (IOException ex) {

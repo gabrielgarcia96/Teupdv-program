@@ -3,6 +3,7 @@ module com.garciasolutions.teupdv {
     requires javafx.fxml;
     requires java.sql;
     requires java.desktop;
+    requires org.json;
 
     opens com.garciasolutions.teupdv.models.controller to javafx.fxml;
     opens com.garciasolutions.teupdv.models.view to javafx.graphics;

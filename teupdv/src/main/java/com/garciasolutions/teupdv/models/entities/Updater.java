@@ -1,6 +1,9 @@
 package com.garciasolutions.teupdv.models.entities;
 
 import javafx.scene.control.Alert;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -8,27 +11,48 @@ import java.util.Properties;
 
 public class Updater {
 
-    private static final String BASE_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/";
+    private static final String API_URL = "https://api.github.com/repos/gabrielgarcia96/Teupdv-program/releases";
     private static final String LOCAL_VERSION_FILE = "version.properties";
     private static final String LOCAL_SOFTWARE_PATH = "teupdv.jar";
 
     public static boolean checkForUpdates() throws IOException {
         String localVersion = getLocalVersion();
-        System.out.println("Versão local: " + localVersion);
-
-        String remoteVersion = getRemoteVersion();
-        System.out.println("Versão remota: " + remoteVersion);
+        String remoteVersion = getLatestVersion();
 
         if (localVersion.equals(remoteVersion)) {
             showAlert(Alert.AlertType.INFORMATION, "Atualização", "O software já está na versão mais recente.");
-            return false;
-        } else if (isNewerVersion(remoteVersion, localVersion)) {
-            System.out.println("Nova versão disponível. Atualizando...");
-            downloadAndUpdateSoftware(remoteVersion);
-            return true;
+            return false; // Nenhuma atualização necessária
         } else {
-            System.out.println("O software já está atualizado.");
-            return false;
+            downloadAndUpdateSoftware(remoteVersion);
+            return true; // Atualização concluída
+        }
+    }
+
+
+    private static String getLatestVersion() throws IOException {
+        URL url = new URL(API_URL);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        int responseCode = connection.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                JSONArray releases = new JSONArray(response.toString());
+                if (releases.length() > 0) {
+                    JSONObject latestRelease = releases.getJSONObject(0);
+                    return latestRelease.getString("tag_name");
+                } else {
+                    throw new IOException("No releases found.");
+                }
+            }
+        } else {
+            throw new IOException("Failed to get releases. HTTP response code: " + responseCode);
         }
     }
 
@@ -36,26 +60,9 @@ public class Updater {
         try (InputStream input = new FileInputStream(LOCAL_VERSION_FILE)) {
             Properties properties = new Properties();
             properties.load(input);
-            return properties.getProperty("version");
-        }
-    }
-
-    private static String getRemoteVersion() throws IOException {
-        URL url = new URL(BASE_URL + "version.properties");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-
-        int responseCode = connection.getResponseCode();
-        System.out.println("HTTP Response Code: " + responseCode);
-
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                Properties properties = new Properties();
-                properties.load(reader);
-                return properties.getProperty("version");
-            }
-        } else {
-            throw new IOException("Failed to get remote version. HTTP response code: " + responseCode);
+            String version = properties.getProperty("version");
+            System.out.println("Versão local lida do arquivo: " + version);
+            return version;
         }
     }
 
@@ -64,8 +71,13 @@ public class Updater {
     }
 
     private static void downloadAndUpdateSoftware(String version) throws IOException {
-        // Download novo JAR
-        URL jarUrl = new URL(BASE_URL + version + "/teupdv.jar");
+        String jarUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/teupdv.jar";
+        String versionUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/version.properties";
+
+        System.out.println("URL do JAR: " + jarUrlStr);
+        System.out.println("URL do version.properties: " + versionUrlStr);
+
+        URL jarUrl = new URL(jarUrlStr);
         HttpURLConnection jarConnection = (HttpURLConnection) jarUrl.openConnection();
         jarConnection.setRequestMethod("GET");
 
@@ -78,10 +90,10 @@ public class Updater {
                 while ((bytesRead = input.read(buffer)) != -1) {
                     output.write(buffer, 0, bytesRead);
                 }
+                System.out.println("Novo JAR baixado e salvo com sucesso.");
             }
 
-            // Atualizar o arquivo version.properties
-            URL versionUrl = new URL(BASE_URL + version + "/version.properties");
+            URL versionUrl = new URL(versionUrlStr);
             HttpURLConnection versionConnection = (HttpURLConnection) versionUrl.openConnection();
             versionConnection.setRequestMethod("GET");
 
@@ -94,14 +106,12 @@ public class Updater {
                     while ((bytesRead = versionInput.read(buffer)) != -1) {
                         versionOutput.write(buffer, 0, bytesRead);
                     }
+                    System.out.println("Arquivo version.properties atualizado com sucesso.");
                 }
-                System.out.println("Arquivo version.properties atualizado com sucesso.");
             } else {
                 throw new IOException("Failed to download version file. HTTP response code: " + versionResponseCode);
             }
 
-            System.out.println("Atualização concluída.");
-            showAlert(Alert.AlertType.INFORMATION, "Atualização", "A atualização foi concluída com sucesso. Por favor, reinicie o software para aplicar a atualização.");
         } else {
             throw new IOException("Failed to download update. HTTP response code: " + responseCode);
         }
