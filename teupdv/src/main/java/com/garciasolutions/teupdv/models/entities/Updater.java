@@ -10,8 +10,8 @@ import java.util.Properties;
 
 public class Updater {
 
-    private static final String VERSION_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/v1.0.1/version.properties";
-    private static final String DOWNLOAD_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/v1.0.1/teupdv.jar";
+    private static final String VERSION_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/v1.0.2/version.properties";
+    private static final String DOWNLOAD_URL = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/v1.0.2/teupdv.jar";
     private static final String LOCAL_VERSION_FILE = "version.properties";
     private static final String LOCAL_SOFTWARE_PATH = "teupdv.jar";
 
