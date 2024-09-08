@@ -106,7 +106,7 @@ public class Updater {
         try (InputStream input = new FileInputStream(LOCAL_VERSION_FILE)) {
             Properties properties = new Properties();
             properties.load(input);
-            String version = properties.getProperty("version");
+            String version = properties.getProperty("version", "Desconhecida");
             System.out.println("Versão local lida do arquivo: " + version);
             return version;
         }

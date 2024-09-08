@@ -11,12 +11,17 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class LoginView extends Application {
+
+    private static final String VERSION_FILE_PATH = "C:/teupdv_data/version.properties";
 
 
     @Override
@@ -31,10 +36,11 @@ public class LoginView extends Application {
         passwordTextField.setMaxWidth(200);
         Button btnEnter = new Button("Enter");
 
-
+        // Version Label
+        Label versionLabel = new Label("Versão: " + getSoftwareVersion());
+        versionLabel.setStyle("-fx-font-size: 12; -fx-text-fill: gray;"); // Style for version label
 
         // Actions and Methods
-
         btnEnter.setOnAction(e -> {
             DatabaseUser databaseUser = new DatabaseUser();
             String username = usernameTextField.getText();
@@ -59,10 +65,6 @@ public class LoginView extends Application {
             }
         });
 
-
-
-
-
         // Adjust margins for better spacing
         VBox.setMargin(usernameLabel, new Insets(0, 0, 0, 0));
         VBox.setMargin(usernameTextField, new Insets(0, 0, 0, 0));
@@ -75,10 +77,10 @@ public class LoginView extends Application {
         loginVbox.setAlignment(Pos.CENTER);
         loginVbox.setSpacing(10); // Adjust spacing between components
         loginVbox.setPadding(new Insets(20)); // Add padding around the VBox
-        loginVbox.getChildren().addAll(usernameLabel, usernameTextField, passwordLabel, passwordTextField, btnEnter);
+        loginVbox.getChildren().addAll(usernameLabel, usernameTextField, passwordLabel, passwordTextField, btnEnter, versionLabel);
 
         // Load the CSS file
-        Scene scene = new Scene(loginVbox, 300, 200); // Increased height for better visibility
+        Scene scene = new Scene(loginVbox, 300, 220); // Increased height for better visibility
         scene.getStylesheets().add(getClass().getResource("/loginstyle.css").toExternalForm());
 
         stage.setScene(scene);
@@ -86,8 +88,22 @@ public class LoginView extends Application {
         stage.show();
     }
 
+    private String getSoftwareVersion() {
+        try (InputStream input = new FileInputStream(VERSION_FILE_PATH)) {
+            Properties properties = new Properties();
+            properties.load(input);
+            String version = properties.getProperty("version", "Desconhecida");
+            System.out.println("Versão carregada: " + version);
+            return version;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return "Erro ao carregar versão";
+        }
+    }
+
+
+
     public static void main(String[] args) {
         launch(args);
     }
-
 }

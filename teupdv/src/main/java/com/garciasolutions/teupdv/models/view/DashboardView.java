@@ -28,15 +28,16 @@ import javafx.stage.Stage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.control.Alert;
+
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
 import javafx.scene.control.ProgressIndicator;
 
 public class DashboardView extends Application {
@@ -48,6 +49,7 @@ public class DashboardView extends Application {
     private Label totalLabel;
     private double totalAmount = 0.0;
     private Map<String, SelectedProduct> selectedProducts = new HashMap<>();
+    private static final String VERSION_FILE_PATH = "C:/teupdv_data/version.properties";
 
     public DashboardView(AcessLevel accessLevel) {
         this.accessLevel = accessLevel;
@@ -63,8 +65,6 @@ public class DashboardView extends Application {
     public void start(Stage stage) throws Exception {
         databaseProduct = new DatabaseProduct();
         openModalController = new OpenModalController(databaseProduct);
-        ProgressIndicator progressIndicator = new ProgressIndicator();
-        progressIndicator.setVisible(false); // Inicialmente invisível
 
 
 
@@ -86,6 +86,10 @@ public class DashboardView extends Application {
         menuProducts.getItems().setAll(cadProducts, listProducts);
         menuReports.getItems().setAll(generateReport, generateCancelationReport);
 
+        // Version Label
+        Label versionLabel = new Label("Versão: " + getSoftwareVersion());
+        versionLabel.setStyle("-fx-font-size: 12; -fx-text-fill: gray;");
+
         // Dashboard Layout
         BorderPane mainLayout = new BorderPane();
         Scene scene = new Scene(mainLayout, 1024, 768);
@@ -95,6 +99,7 @@ public class DashboardView extends Application {
         stage.show();
 
         mainLayout.setTop(menuBar);
+        mainLayout.setBottom(versionLabel);
 
         // Interface de Vendas
         VBox salesLayout = new VBox(10);
@@ -878,6 +883,19 @@ public class DashboardView extends Application {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private String getSoftwareVersion() {
+        try (InputStream input = new FileInputStream(VERSION_FILE_PATH)) {
+            Properties properties = new Properties();
+            properties.load(input);
+            String version = properties.getProperty("version", "Desconhecida");
+            System.out.println("Versão carregada: " + version);
+            return version;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return "Erro ao carregar versão";
+        }
     }
 
     public static void main(String[] args) {
