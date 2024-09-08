@@ -34,13 +34,44 @@ public class Updater {
             showAlert(Alert.AlertType.INFORMATION, "Atualização", "O software já está na versão mais recente.");
             return false; // Nenhuma atualização necessária
         } else {
-            showProgressIndicator(owner);
+            // Mostrar modal de progresso
+            Platform.runLater(() -> showProgressIndicator(owner));
+
             try {
                 downloadAndUpdateSoftware(remoteVersion);
+            } catch (IOException e) {
+                e.printStackTrace(); // Adicionar logging para erros de download
             } finally {
-                hideProgressIndicator();
+                // Esconder modal de progresso
+                Platform.runLater(() -> hideProgressIndicator());
             }
             return true; // Atualização concluída
+        }
+    }
+
+    private static void showProgressIndicator(Window owner) {
+        if (progressStage == null) {
+            progressStage = new Stage();
+            progressStage.initModality(Modality.APPLICATION_MODAL);
+            progressStage.initOwner(owner);
+
+            ProgressIndicator progressIndicator = new ProgressIndicator();
+            progressIndicator.setPrefSize(100, 100);
+
+            VBox vbox = new VBox(10, new Label("Atualizando, aguarde..."), progressIndicator);
+            vbox.setAlignment(Pos.CENTER);
+
+            Scene progressScene = new Scene(vbox, 300, 150);
+            progressStage.setScene(progressScene);
+            progressStage.setTitle("Atualização em andamento");
+        }
+        progressStage.show();
+    }
+
+    private static void hideProgressIndicator() {
+        if (progressStage != null) {
+            progressStage.close();
+            progressStage = null; // Libere a referência
         }
     }
 
@@ -122,32 +153,6 @@ public class Updater {
         }
     }
 
-    private static void showProgressIndicator(Window owner) {
-        Platform.runLater(() -> {
-            progressStage = new Stage();
-            progressStage.initModality(Modality.APPLICATION_MODAL);
-            progressStage.initOwner(owner);
-
-            ProgressIndicator progressIndicator = new ProgressIndicator();
-            progressIndicator.setPrefSize(100, 100);
-
-            VBox vbox = new VBox(10, new Label("Atualizando, aguarde..."), progressIndicator);
-            vbox.setAlignment(Pos.CENTER);
-
-            Scene progressScene = new Scene(vbox, 300, 150);
-            progressStage.setScene(progressScene);
-            progressStage.setTitle("Atualização em andamento");
-            progressStage.show();
-        });
-    }
-
-    private static void hideProgressIndicator() {
-        Platform.runLater(() -> {
-            if (progressStage != null) {
-                progressStage.close();
-            }
-        });
-    }
 
     private static void showAlert(Alert.AlertType alertType, String title, String content) {
         Alert alert = new Alert(alertType);
