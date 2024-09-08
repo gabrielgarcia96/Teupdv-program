@@ -7,14 +7,18 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
 public class Updater {
 
-
     private static final String API_URL = "https://api.github.com/repos/gabrielgarcia96/Teupdv-program/releases";
-    private static final String LOCAL_SOFTWARE_PATH = "C:/Program Files (x86)/teupdv/teupdv.jar";
-    private static final String LOCAL_VERSION_FILE = "C:/Program Files (x86)/teupdv/version.properties";
+    private static final String LOCAL_JAR_PATH = "C:/teupdv_data/teupdv.jar";
+    private static final String LOCAL_EXE_PATH = "C:/teupdv_data/teupdv.exe";
+    private static final String LOCAL_VERSION_FILE = "C:/teupdv_data/version.properties";
+
     public static boolean checkForUpdates() throws IOException {
         String localVersion = getLocalVersion();
         String remoteVersion = getLatestVersion();
@@ -27,7 +31,6 @@ public class Updater {
             return true; // Atualização concluída
         }
     }
-
 
     private static String getLatestVersion() throws IOException {
         URL url = new URL(API_URL);
@@ -66,54 +69,44 @@ public class Updater {
         }
     }
 
-    private static boolean isNewerVersion(String remoteVersion, String localVersion) {
-        return remoteVersion.compareTo(localVersion) > 0;
-    }
-
     private static void downloadAndUpdateSoftware(String version) throws IOException {
         String jarUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/teupdv.jar";
+        String exeUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/teupdv.exe";
         String versionUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/version.properties";
 
         System.out.println("URL do JAR: " + jarUrlStr);
+        System.out.println("URL do EXE: " + exeUrlStr);
         System.out.println("URL do version.properties: " + versionUrlStr);
 
-        URL jarUrl = new URL(jarUrlStr);
-        HttpURLConnection jarConnection = (HttpURLConnection) jarUrl.openConnection();
-        jarConnection.setRequestMethod("GET");
+        // Baixar e substituir o JAR
+        downloadFile(jarUrlStr, LOCAL_JAR_PATH);
 
-        int responseCode = jarConnection.getResponseCode();
+        // Baixar e substituir o EXE
+        downloadFile(exeUrlStr, LOCAL_EXE_PATH);
+
+        // Baixar e substituir o arquivo version.properties
+        downloadFile(versionUrlStr, LOCAL_VERSION_FILE);
+
+        System.out.println("Atualizações aplicadas com sucesso.");
+    }
+
+    private static void downloadFile(String fileUrlStr, String localPath) throws IOException {
+        URL fileUrl = new URL(fileUrlStr);
+        HttpURLConnection connection = (HttpURLConnection) fileUrl.openConnection();
+        connection.setRequestMethod("GET");
+
+        int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
-            try (InputStream input = jarConnection.getInputStream();
-                 FileOutputStream output = new FileOutputStream(LOCAL_SOFTWARE_PATH)) {
+            try (InputStream input = connection.getInputStream();
+                 FileOutputStream output = new FileOutputStream(localPath)) {
                 byte[] buffer = new byte[4096];
                 int bytesRead;
                 while ((bytesRead = input.read(buffer)) != -1) {
                     output.write(buffer, 0, bytesRead);
                 }
-                System.out.println("Novo JAR baixado e salvo com sucesso.");
             }
-
-            URL versionUrl = new URL(versionUrlStr);
-            HttpURLConnection versionConnection = (HttpURLConnection) versionUrl.openConnection();
-            versionConnection.setRequestMethod("GET");
-
-            int versionResponseCode = versionConnection.getResponseCode();
-            if (versionResponseCode == HttpURLConnection.HTTP_OK) {
-                try (InputStream versionInput = versionConnection.getInputStream();
-                     FileOutputStream versionOutput = new FileOutputStream(LOCAL_VERSION_FILE)) {
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = versionInput.read(buffer)) != -1) {
-                        versionOutput.write(buffer, 0, bytesRead);
-                    }
-                    System.out.println("Arquivo version.properties atualizado com sucesso.");
-                }
-            } else {
-                throw new IOException("Failed to download version file. HTTP response code: " + versionResponseCode);
-            }
-
         } else {
-            throw new IOException("Failed to download update. HTTP response code: " + responseCode);
+            throw new IOException("Failed to download file. HTTP response code: " + responseCode);
         }
     }
 
@@ -124,3 +117,4 @@ public class Updater {
         alert.showAndWait();
     }
 }
+
