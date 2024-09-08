@@ -1,15 +1,21 @@
 package com.garciasolutions.teupdv.models.entities;
 
+import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.VBox;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
 public class Updater {
@@ -18,8 +24,9 @@ public class Updater {
     private static final String LOCAL_JAR_PATH = "C:/teupdv_data/teupdv.jar";
     private static final String LOCAL_EXE_PATH = "C:/teupdv_data/teupdv.exe";
     private static final String LOCAL_VERSION_FILE = "C:/teupdv_data/version.properties";
+    private static Stage progressStage;
 
-    public static boolean checkForUpdates() throws IOException {
+    public static boolean checkForUpdates(Window owner) throws IOException {
         String localVersion = getLocalVersion();
         String remoteVersion = getLatestVersion();
 
@@ -27,7 +34,12 @@ public class Updater {
             showAlert(Alert.AlertType.INFORMATION, "Atualização", "O software já está na versão mais recente.");
             return false; // Nenhuma atualização necessária
         } else {
-            downloadAndUpdateSoftware(remoteVersion);
+            showProgressIndicator(owner);
+            try {
+                downloadAndUpdateSoftware(remoteVersion);
+            } finally {
+                hideProgressIndicator();
+            }
             return true; // Atualização concluída
         }
     }
@@ -110,6 +122,33 @@ public class Updater {
         }
     }
 
+    private static void showProgressIndicator(Window owner) {
+        Platform.runLater(() -> {
+            progressStage = new Stage();
+            progressStage.initModality(Modality.APPLICATION_MODAL);
+            progressStage.initOwner(owner);
+
+            ProgressIndicator progressIndicator = new ProgressIndicator();
+            progressIndicator.setPrefSize(100, 100);
+
+            VBox vbox = new VBox(10, new Label("Atualizando, aguarde..."), progressIndicator);
+            vbox.setAlignment(Pos.CENTER);
+
+            Scene progressScene = new Scene(vbox, 300, 150);
+            progressStage.setScene(progressScene);
+            progressStage.setTitle("Atualização em andamento");
+            progressStage.show();
+        });
+    }
+
+    private static void hideProgressIndicator() {
+        Platform.runLater(() -> {
+            if (progressStage != null) {
+                progressStage.close();
+            }
+        });
+    }
+
     private static void showAlert(Alert.AlertType alertType, String title, String content) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
@@ -117,4 +156,3 @@ public class Updater {
         alert.showAndWait();
     }
 }
-

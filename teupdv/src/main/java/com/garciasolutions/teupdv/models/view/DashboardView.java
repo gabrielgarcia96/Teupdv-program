@@ -28,7 +28,6 @@ import javafx.stage.Stage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.control.Alert;
-
 import java.io.IOException;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -38,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javafx.scene.control.ProgressIndicator;
 
 public class DashboardView extends Application {
 
@@ -63,7 +63,8 @@ public class DashboardView extends Application {
     public void start(Stage stage) throws Exception {
         databaseProduct = new DatabaseProduct();
         openModalController = new OpenModalController(databaseProduct);
-
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setVisible(false); // Inicialmente invisível
 
 
 
@@ -195,28 +196,16 @@ public class DashboardView extends Application {
         // update software
         updateItem.setOnAction(e -> {
             try {
-                // Executa a atualização e obtém o feedback
-                boolean updated = Updater.checkForUpdates();
+                boolean updated = Updater.checkForUpdates(stage);
 
                 if (updated) {
-                    // Notifique o usuário sobre a necessidade de reiniciar
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Atualização Concluída");
                     alert.setHeaderText(null);
                     alert.setContentText("A atualização foi concluída com sucesso. Por favor, reinicie o software para aplicar as mudanças.");
                     alert.showAndWait();
-
-                    // Opcional: Reiniciar o aplicativo programaticamente
                     System.exit(0);
-                } else {
-                    // Notifique o usuário que o software já está atualizado
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Nenhuma Atualização Necessária");
-                    alert.setHeaderText(null);
-                    alert.setContentText("O software já está na versão mais recente.");
-                    alert.showAndWait();
                 }
-
             } catch (IOException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Erro de Atualização");
@@ -225,6 +214,7 @@ public class DashboardView extends Application {
                 alert.showAndWait();
             }
         });
+
 
 
         // Actions for Menu Items
