@@ -11,6 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -81,7 +82,7 @@ public class LoginView extends Application {
         scene.getStylesheets().add(getClass().getResource("/loginstyle.css").toExternalForm());
 
         stage.setScene(scene);
-        stage.setTitle("Login");
+        stage.setTitle("Login Teupdv");
         stage.show();
     }
 

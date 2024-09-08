@@ -13,7 +13,7 @@
   <stayAlive>false</stayAlive>
   <restartOnCrash>false</restartOnCrash>
   <manifest></manifest>
-  <icon>C:\Users\bielg\Downloads\authentic-leather-_1_.ico</icon>
+  <icon>C:\Users\bielg\Documents\GitHub\Teupdv-program\teupdv\src\main\resources\img\imgteupdv.ico</icon>
   <jre>
     <path>%JAVA_HOME%;%PATH%</path>
     <requiresJdk>false</requiresJdk>
