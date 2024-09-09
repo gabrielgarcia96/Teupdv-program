@@ -1,6 +1,7 @@
 package com.garciasolutions.teupdv.models.entities;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -37,17 +38,48 @@ public class Updater {
             // Mostrar modal de progresso
             Platform.runLater(() -> showProgressIndicator(owner));
 
-            try {
-                downloadAndUpdateSoftware(remoteVersion);
-            } catch (IOException e) {
-                e.printStackTrace(); // Adicionar logging para erros de download
-            } finally {
-                // Esconder modal de progresso
-                Platform.runLater(() -> hideProgressIndicator());
-            }
-            return true; // Atualização concluída
+            // Iniciar a tarefa de atualização em um thread separado
+            Task<Boolean> updateTask = new Task<>() {
+                @Override
+                protected Boolean call() throws Exception {
+                    try {
+                        downloadAndUpdateSoftware(remoteVersion);
+                        return true;
+                    } catch (IOException e) {
+                        e.printStackTrace(); // Adicionar logging para erros de download
+                        return false;
+                    }
+                }
+
+                @Override
+                protected void succeeded() {
+                    super.succeeded();
+                    hideProgressIndicator();
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Atualização Concluída");
+                    alert.setHeaderText(null);
+                    alert.setContentText("A atualização foi concluída com sucesso. Por favor, reinicie o software para aplicar as mudanças.");
+                    alert.showAndWait();
+                    System.exit(0);
+                }
+
+                @Override
+                protected void failed() {
+                    super.failed();
+                    hideProgressIndicator();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Erro de Atualização");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Ocorreu um erro durante a atualização: " + getException().getMessage());
+                    alert.showAndWait();
+                }
+            };
+
+            new Thread(updateTask).start(); // Iniciar a tarefa em um thread separado
+            return true; // Atualização iniciada
         }
     }
+
 
     private static void showProgressIndicator(Window owner) {
         if (progressStage == null) {
