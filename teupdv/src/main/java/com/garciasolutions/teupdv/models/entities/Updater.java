@@ -31,11 +31,10 @@ public class Updater {
     private static HttpURLConnection createConnection(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
-        connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN); // Adicione o cabeçalho de autorização
+        connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN);
         connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
         return connection;
     }
-
 
     public static boolean checkForUpdates(Window owner) throws IOException {
         String localVersion = getLocalVersion();
@@ -45,15 +44,13 @@ public class Updater {
             showAlert(Alert.AlertType.INFORMATION, "Atualização", "O software já está na versão mais recente.");
             return false; // Nenhuma atualização necessária
         } else {
-            // Mostrar modal de progresso
             Platform.runLater(() -> showProgressIndicator(owner));
 
             try {
                 downloadAndUpdateSoftware(remoteVersion);
             } catch (IOException e) {
-                e.printStackTrace(); // Adicionar logging para erros de download
+                e.printStackTrace();
             } finally {
-                // Esconder modal de progresso
                 Platform.runLater(() -> hideProgressIndicator());
             }
             return true; // Atualização concluída
@@ -82,7 +79,7 @@ public class Updater {
     private static void hideProgressIndicator() {
         if (progressStage != null) {
             progressStage.close();
-            progressStage = null; // Libere a referência
+            progressStage = null;
         }
     }
 
@@ -131,13 +128,8 @@ public class Updater {
         System.out.println("URL do EXE: " + exeUrlStr);
         System.out.println("URL do version.properties: " + versionUrlStr);
 
-        // Baixar e substituir o JAR
         downloadFile(jarUrlStr, LOCAL_JAR_PATH);
-
-        // Baixar e substituir o EXE
         downloadFile(exeUrlStr, LOCAL_EXE_PATH);
-
-        // Baixar e substituir o arquivo version.properties
         downloadFile(versionUrlStr, LOCAL_VERSION_FILE);
 
         System.out.println("Atualizações aplicadas com sucesso.");
@@ -147,6 +139,7 @@ public class Updater {
         URL fileUrl = new URL(fileUrlStr);
         HttpURLConnection connection = createConnection(fileUrl);
         connection.setRequestMethod("GET");
+        connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN); // Adicione o cabeçalho de autorização
 
         int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -159,10 +152,9 @@ public class Updater {
                 }
             }
         } else {
-            throw new IOException("Failed to download file. HTTP response code: " + responseCode);
+            throw new IOException("Failed to download file from " + fileUrlStr + ". HTTP response code: " + responseCode);
         }
     }
-
 
     private static void showAlert(Alert.AlertType alertType, String title, String content) {
         Alert alert = new Alert(alertType);
