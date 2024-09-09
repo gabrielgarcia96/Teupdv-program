@@ -24,7 +24,16 @@ public class Updater {
     private static final String LOCAL_JAR_PATH = "C:/teupdv_data/teupdv.jar";
     private static final String LOCAL_EXE_PATH = "C:/teupdv_data/teupdv.exe";
     private static final String LOCAL_VERSION_FILE = "C:/teupdv_data/version.properties";
+    private static final String GITHUB_TOKEN = "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";
     private static Stage progressStage;
+
+    private static HttpURLConnection createConnection(URL url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN); // Adicione o cabeçalho de autorização
+        return connection;
+    }
+
 
     public static boolean checkForUpdates(Window owner) throws IOException {
         String localVersion = getLocalVersion();
@@ -77,8 +86,7 @@ public class Updater {
 
     private static String getLatestVersion() throws IOException {
         URL url = new URL(API_URL);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
+        HttpURLConnection connection = createConnection(url);
 
         int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -135,7 +143,7 @@ public class Updater {
 
     private static void downloadFile(String fileUrlStr, String localPath) throws IOException {
         URL fileUrl = new URL(fileUrlStr);
-        HttpURLConnection connection = (HttpURLConnection) fileUrl.openConnection();
+        HttpURLConnection connection = createConnection(fileUrl);
         connection.setRequestMethod("GET");
 
         int responseCode = connection.getResponseCode();
