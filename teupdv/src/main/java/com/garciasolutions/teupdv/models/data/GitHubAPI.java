@@ -1,34 +1,23 @@
 package com.garciasolutions.teupdv.models.data;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class GitHubAPI {
 
     private static final String API_URL = "https://api.github.com/repos/gabrielgarcia96/Teupdv-program/releases";
-    private static final String GITHUB_TOKEN = "";
-
-    private static HttpURLConnection createConnection(URL url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN);
-        connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
-        return connection;
-    }
 
     public static String getLatestVersion() throws IOException {
         URL url = new URL(API_URL);
-        HttpURLConnection connection = createConnection(url);
-        int responseCode = connection.getResponseCode();
-        System.out.println("Response Code: " + responseCode);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
 
+        int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                 StringBuilder response = new StringBuilder();
@@ -36,6 +25,8 @@ public class GitHubAPI {
                 while ((line = reader.readLine()) != null) {
                     response.append(line);
                 }
+
+                // Parse the JSON response
                 JSONArray releases = new JSONArray(response.toString());
                 if (releases.length() > 0) {
                     JSONObject latestRelease = releases.getJSONObject(0);
@@ -45,15 +36,6 @@ public class GitHubAPI {
                 }
             }
         } else {
-            // Read error response
-            try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
-                StringBuilder errorResponse = new StringBuilder();
-                String errorLine;
-                while ((errorLine = errorReader.readLine()) != null) {
-                    errorResponse.append(errorLine);
-                }
-                System.out.println("Error Response: " + errorResponse.toString());
-            }
             throw new IOException("Failed to get releases. HTTP response code: " + responseCode);
         }
     }
@@ -67,3 +49,4 @@ public class GitHubAPI {
         }
     }
 }
+
