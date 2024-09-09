@@ -11,6 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -72,12 +73,17 @@ public class LoginView extends Application {
         VBox.setMargin(passwordTextField, new Insets(0, 0, 0, 0));
         VBox.setMargin(btnEnter, new Insets(5, 0, 0, 0));
 
+        // Create HBox for version label
+        HBox versionBox = new HBox(versionLabel);
+        versionBox.setAlignment(Pos.CENTER_RIGHT);
+        versionBox.setPadding(new Insets(10, 0, 0, 0)); // Padding to the top
+
         // Window scene
         VBox loginVbox = new VBox();
         loginVbox.setAlignment(Pos.CENTER);
         loginVbox.setSpacing(10); // Adjust spacing between components
-        loginVbox.setPadding(new Insets(20)); // Add padding around the VBox
-        loginVbox.getChildren().addAll(usernameLabel, usernameTextField, passwordLabel, passwordTextField, btnEnter, versionLabel);
+        loginVbox.setPadding(new Insets(5)); // Add padding around the VBox
+        loginVbox.getChildren().addAll(usernameLabel, usernameTextField, passwordLabel, passwordTextField, btnEnter, versionBox);
 
         // Load the CSS file
         Scene scene = new Scene(loginVbox, 300, 220); // Increased height for better visibility
@@ -87,6 +93,7 @@ public class LoginView extends Application {
         stage.setTitle("Login");
         stage.show();
     }
+
 
     private String getSoftwareVersion() {
         try (InputStream input = new FileInputStream(VERSION_FILE_PATH)) {

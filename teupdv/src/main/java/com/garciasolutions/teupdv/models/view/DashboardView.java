@@ -100,6 +100,7 @@ public class DashboardView extends Application {
 
         mainLayout.setTop(menuBar);
         mainLayout.setBottom(versionLabel);
+        BorderPane.setAlignment(versionLabel, Pos.BOTTOM_RIGHT);
 
         // Interface de Vendas
         VBox salesLayout = new VBox(10);
@@ -125,6 +126,7 @@ public class DashboardView extends Application {
 
         Button payButton = new Button("Pagar");
         payButton.setOnAction(e -> openPaymentModal());
+
 
         salesLayout.getChildren().addAll(searchLayout, salesListView, removeButton, totalLabel, payButton);
         mainLayout.setCenter(salesLayout);
