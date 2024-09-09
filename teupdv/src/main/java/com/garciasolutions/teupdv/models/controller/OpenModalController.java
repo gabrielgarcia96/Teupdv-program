@@ -10,6 +10,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -210,6 +211,18 @@ public class OpenModalController {
         VBox vbox = new VBox(10);
         vbox.setAlignment(Pos.CENTER);
 
+        MenuBar menuBar = new MenuBar();
+        Menu reportMenu = new Menu("Tipos de Pagamento");
+        menuBar.getMenus().add(reportMenu);
+
+        MenuItem cashItem = new MenuItem("Dinheiro");
+        MenuItem creditCardItem = new MenuItem("Cartão de Crédito");
+        MenuItem debitCardItem = new MenuItem("Cartão de Débito");
+        MenuItem pixItem = new MenuItem("Pix");
+        MenuItem allItem = new MenuItem("Todos");
+
+        reportMenu.getItems().addAll(cashItem, creditCardItem, debitCardItem, pixItem, allItem);
+
         TableView<Venda> tableView = new TableView<>();
         TableColumn<Venda, String> codeColumn = new TableColumn<>("Código");
         codeColumn.setCellValueFactory(new PropertyValueFactory<>("codigoProduto"));
@@ -226,7 +239,7 @@ public class OpenModalController {
         TableColumn<Venda, Double> totalColumn = new TableColumn<>("Total");
         totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
 
-        TableColumn<Venda, Date> dateColumn = new TableColumn<>("Data");
+        TableColumn<Venda, String> dateColumn = new TableColumn<>("Data");
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("data"));
 
         TableColumn<Venda, String> paymentMethodColumn = new TableColumn<>("Forma de Pagamento");
@@ -239,7 +252,7 @@ public class OpenModalController {
             {
                 cancelButton.setOnAction(e -> {
                     Venda venda = getTableView().getItems().get(getIndex());
-                    System.out.println("Venda selecionada: ID = " + venda.getId());  // Debug: Verifique o ID
+                    System.out.println("Venda selecionada: ID = " + venda.getId()); // Debug: Verifique o ID
                     openCancelModal(venda);
                 });
             }
@@ -257,28 +270,61 @@ public class OpenModalController {
 
         tableView.getColumns().addAll(codeColumn, nameColumn, priceColumn, quantityColumn, totalColumn, dateColumn, paymentMethodColumn, cancelColumn);
 
-        // Atualizar a lista de vendas para incluir apenas as não canceladas
+        // Criar um Label para mostrar o total das vendas
+        Label totalLabel = new Label();
+        totalLabel.setStyle("-fx-font-size: 14px;");
+
+        // Função para atualizar a tabela e o total
+        updateTableAndTotal(startDate, endDate, tableView, totalLabel, null);
+
+        // Adicionar EventHandlers aos MenuItems
+        cashItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Dinheiro"));
+        creditCardItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Cartão de Crédito"));
+        debitCardItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Cartão de Débito"));
+        pixItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Pix"));
+        allItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, null));
+
+
+
+        vbox.getChildren().addAll(tableView, totalLabel);
+
+        BorderPane borderPane = new BorderPane();
+        borderPane.setTop(menuBar);
+        borderPane.setCenter(vbox);
+
+        Scene scene = new Scene(borderPane, 800, 600);
+        reportDisplayStage.setScene(scene);
+        reportDisplayStage.setTitle("Relatório de Vendas");
+        reportDisplayStage.show();
+    }
+
+
+    private void updateTableAndTotal(LocalDate startDate, LocalDate endDate, TableView<Venda> tableView, Label totalLabel, String paymentMethodFilter) {
+        // Atualizar a lista de vendas
         List<Venda> reportData = databaseProduct.getSalesReport(startDate, endDate);
+
+        // Filtrar as vendas não canceladas
         List<Venda> filteredData = reportData.stream()
                 .filter(venda -> !venda.isCancelada()) // Filtra vendas não canceladas
                 .collect(Collectors.toList());
 
-        tableView.getItems().addAll(filteredData);
+        // Filtrar por metodo de pagamento se especificado
+        if (paymentMethodFilter != null) {
+            filteredData = filteredData.stream()
+                    .filter(venda -> paymentMethodFilter.equals(venda.getPaymentMethod()))
+                    .collect(Collectors.toList());
+        }
+
+        // Atualizar a tabela
+        tableView.getItems().setAll(filteredData);
 
         // Calcular o total das vendas não canceladas
         double grandTotal = filteredData.stream()
                 .mapToDouble(Venda::getTotal)
                 .sum();
 
-        Label totalLabel = new Label("Total das Vendas: R$" + String.format("%.2f", grandTotal));
-        totalLabel.setStyle("-fx-font-size: 14px;");
-
-        vbox.getChildren().addAll(tableView, totalLabel);
-        reportDisplayStage.setScene(new Scene(vbox, 800, 600));
-        reportDisplayStage.setTitle("Relatório de Vendas");
-        reportDisplayStage.show();
+        totalLabel.setText("Total das Vendas: R$" + String.format("%.2f", grandTotal));
     }
-
 
     public void showCancellationReport(LocalDate startDate, LocalDate endDate) {
         Stage reportDisplayStage = new Stage();

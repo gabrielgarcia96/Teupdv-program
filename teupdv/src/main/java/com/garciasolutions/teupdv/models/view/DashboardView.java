@@ -92,7 +92,7 @@ public class DashboardView extends Application {
 
         // Dashboard Layout
         BorderPane mainLayout = new BorderPane();
-        Scene scene = new Scene(mainLayout, 1024, 768);
+        Scene scene = new Scene(mainLayout, 800, 580);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         stage.setScene(scene);
         stage.setTitle("Dashboard");
@@ -193,10 +193,11 @@ public class DashboardView extends Application {
         searchField.setOnAction(e -> {
             String searchText = searchField.getText().trim();
             if (!searchText.isEmpty()) {
-                addProductToSalesList(searchText); // Adiciona o produto diretamente à lista de vendas
+                addProductToSalesList(searchText);
+                searchField.clear(); // Limpa o campo de busca após adicionar o produto
             }
-            searchField.clear(); // Limpa o campo de busca após adicionar o produto
         });
+
 
         // update software
         updateItem.setOnAction(e -> {
@@ -652,6 +653,7 @@ public class DashboardView extends Application {
             searchStage.toFront(); // Coloca o modal de busca em primeiro plano
             return;
         }
+
         searchStage = new Stage();
         VBox vbox = new VBox(10);
         ListView<String> searchListView = new ListView<>();
@@ -660,11 +662,30 @@ public class DashboardView extends Application {
         searchListView.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 String selectedProduct = searchListView.getSelectionModel().getSelectedItem();
-                if (selectedProduct != null) {
-                    addProductToSalesList(selectedProduct);
+                if (selectedProduct != null && !selectedProduct.isEmpty()) {
+                    // Remove a necessidade de pesquisar novamente
+                    addProductToSalesListDirectly(selectedProduct);
                     searchStage.close();
                     focusOnSearchField(); // Move o foco de volta para o campo de pesquisa
                     searchStage = null; // Limpar a variável após fechar
+                } else {
+                    System.out.println("Nenhum produto selecionado no ENTER.");
+                }
+            }
+        });
+
+        // Adiciona um EventHandler para clique duplo na lista
+        searchListView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                String selectedProduct = searchListView.getSelectionModel().getSelectedItem();
+                if (selectedProduct != null && !selectedProduct.isEmpty()) {
+                    // Remove a necessidade de pesquisar novamente
+                    addProductToSalesListDirectly(selectedProduct);
+                    searchStage.close();
+                    focusOnSearchField(); // Move o foco de volta para o campo de pesquisa
+                    searchStage = null; // Limpar a variável após fechar
+                } else {
+                    System.out.println("Nenhum produto selecionado no clique duplo.");
                 }
             }
         });
@@ -674,31 +695,52 @@ public class DashboardView extends Application {
         searchStage.setTitle("Buscar Produtos");
         searchStage.show();
 
-        long startTime = System.currentTimeMillis(); // Início da medição de tempo
+        // Preenche a lista com os produtos encontrados
         List<String> products;
         if (searchText.isEmpty()) {
             products = databaseProduct.getAllProducts();
         } else {
             products = databaseProduct.searchProducts(searchText);
         }
-        long endTime = System.currentTimeMillis(); // Fim da medição de tempo
-        System.out.println("Tempo de execução da consulta: " + (endTime - startTime) + " ms");
 
         searchListView.getItems().clear();
         searchListView.getItems().addAll(products);
-
-        searchListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                String selectedProduct = searchListView.getSelectionModel().getSelectedItem();
-                if (selectedProduct != null) {
-                    addProductToSalesList(selectedProduct);
-                    searchStage.close();
-                    focusOnSearchField(); // Move o foco de volta para o campo de pesquisa
-                    searchStage = null; // Limpar a variável após fechar
-                }
-            }
-        });
     }
+
+
+    private void addProductToSalesListDirectly(String productInfo) {
+        if (productInfo == null || productInfo.trim().isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "Código Inválido", "Por favor, insira um código de produto válido.");
+            return;
+        }
+
+        // Considera que a lista pode ter vários produtos, então selecionamos o primeiro
+        String[] parts = productInfo.split(" - ");
+        if (parts.length != 2) {
+            showAlert(Alert.AlertType.ERROR, "Erro de Formato", "Formato de produto retornado é inválido.");
+            return;
+        }
+
+        String productCode = parts[0].trim();
+        String productName = parts[1].trim();
+
+        // Assume-se que o preço do produto é obtido do banco de dados
+        double productPrice = databaseProduct.getProductPrice(productCode);
+
+        // Cria ou atualiza o objeto SelectedProduct na lista
+        SelectedProduct selectedProduct = selectedProducts.get(productCode);
+        if (selectedProduct != null) {
+            selectedProduct.incrementQuantity();
+        } else {
+            selectedProduct = new SelectedProduct(0, productCode, productName, productPrice, 1, null);
+            selectedProducts.put(productCode, selectedProduct);
+        }
+
+        // Atualiza a interface de vendas
+        updateSalesListView();
+        updateTotalAmount();
+    }
+
 
     private void focusOnSearchField() {
         searchField.requestFocus();
@@ -764,20 +806,23 @@ public class DashboardView extends Application {
         // Considera que a lista pode ter vários produtos, então selecionamos o primeiro
         String productInfo = products.get(0); // Supondo que a pesquisa retornará uma lista de produtos
         String[] parts = productInfo.split(" - ");
-        String productCode = parts[0];
-        String productName = parts[1];
+        if (parts.length != 2) {
+            showAlert(Alert.AlertType.ERROR, "Erro de Formato", "Formato de produto retornado é inválido.");
+            return;
+        }
 
-        // Assume-se que o preço do produto é uma constante ou pode ser obtido do banco de dados
-        double productPrice = databaseProduct.getProductPrice(productCode); // Metodo fictício para obter o preço do produto
+        String productCode = parts[0].trim();
+        String productName = parts[1].trim();
 
-        // Cria um objeto SelectedProduct e adiciona ao SelectedProduct
+        // Assume-se que o preço do produto é obtido do banco de dados
+        double productPrice = databaseProduct.getProductPrice(productCode);
+
+        // Cria ou atualiza o objeto SelectedProduct na lista
         SelectedProduct selectedProduct = selectedProducts.get(productCode);
         if (selectedProduct != null) {
-            // Se já estiver, apenas atualiza a quantidade
             selectedProduct.incrementQuantity();
         } else {
-            // Caso contrário, adiciona o novo produto
-            selectedProduct = new SelectedProduct(0, productCode, productName, productPrice, 1, null); // ID e motivoCancelamento podem ser ajustados conforme necessário
+            selectedProduct = new SelectedProduct(0, productCode, productName, productPrice, 1, null);
             selectedProducts.put(productCode, selectedProduct);
         }
 
@@ -785,7 +830,6 @@ public class DashboardView extends Application {
         updateSalesListView();
         updateTotalAmount();
     }
-
 
 
 
