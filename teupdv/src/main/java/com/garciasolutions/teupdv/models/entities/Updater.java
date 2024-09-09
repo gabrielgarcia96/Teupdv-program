@@ -24,7 +24,7 @@ public class Updater {
     private static final String LOCAL_JAR_PATH = "C:/teupdv_data/teupdv.jar";
     private static final String LOCAL_EXE_PATH = "C:/teupdv_data/teupdv.exe";
     private static final String LOCAL_VERSION_FILE = "C:/teupdv_data/version.properties";
-    private static final String GITHUB_TOKEN = "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";
+    private static final String GITHUB_TOKEN = "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";
 
     private static Stage progressStage;
 
