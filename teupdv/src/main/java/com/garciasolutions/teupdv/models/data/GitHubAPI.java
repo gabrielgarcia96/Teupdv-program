@@ -11,20 +11,23 @@ import org.json.JSONObject;
 public class GitHubAPI {
 
     private static final String API_URL = "https://api.github.com/repos/gabrielgarcia96/Teupdv-program/releases";
-    private static final String GITHUB_TOKEN = "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";
+    private static final String GITHUB_TOKEN = "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";
 
     private static HttpURLConnection createConnection(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
-        connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN); // Adicione o cabeçalho de autorização
+        connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN);
+        connection.setRequestProperty("Accept", "application/vnd.github.v3+json");// Adicione o cabeçalho de autorização
         return connection;
     }
 
     public static String getLatestVersion() throws IOException {
         URL url = new URL(API_URL);
         HttpURLConnection connection = createConnection(url);
-
         int responseCode = connection.getResponseCode();
+
+        System.out.println("Response Code: " + responseCode);
+
         if (responseCode == HttpURLConnection.HTTP_OK) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                 StringBuilder response = new StringBuilder();

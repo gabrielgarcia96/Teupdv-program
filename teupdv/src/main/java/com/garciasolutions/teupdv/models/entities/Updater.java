@@ -24,13 +24,15 @@ public class Updater {
     private static final String LOCAL_JAR_PATH = "C:/teupdv_data/teupdv.jar";
     private static final String LOCAL_EXE_PATH = "C:/teupdv_data/teupdv.exe";
     private static final String LOCAL_VERSION_FILE = "C:/teupdv_data/version.properties";
-    private static final String GITHUB_TOKEN = "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";
+    private static final String GITHUB_TOKEN = "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";
+
     private static Stage progressStage;
 
     private static HttpURLConnection createConnection(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Authorization", "token " + GITHUB_TOKEN); // Adicione o cabeçalho de autorização
+        connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
         return connection;
     }
 
