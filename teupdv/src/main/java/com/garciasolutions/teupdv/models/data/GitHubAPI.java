@@ -11,7 +11,7 @@ import org.json.JSONObject;
 public class GitHubAPI {
 
     private static final String API_URL = "https://api.github.com/repos/gabrielgarcia96/Teupdv-program/releases";
-    private static final String GITHUB_TOKEN = "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";
+    private static final String GITHUB_TOKEN = "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";
 
     private static HttpURLConnection createConnection(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
