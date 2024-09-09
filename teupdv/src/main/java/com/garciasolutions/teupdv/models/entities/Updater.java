@@ -120,6 +120,7 @@ public class Updater {
     }
 
     private static void downloadAndUpdateSoftware(String version) throws IOException {
+
         String jarUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/teupdv.jar";
         String exeUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/teupdv.exe";
         String versionUrlStr = "https://github.com/gabrielgarcia96/Teupdv-program/releases/download/" + version + "/version.properties";
