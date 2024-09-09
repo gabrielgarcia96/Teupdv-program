@@ -225,6 +225,8 @@ public class DashboardView extends Application {
 
 
 
+
+
         // Actions for Menu Items
         cadProducts.setOnAction(event -> {
             if (cadStage != null && cadStage.isShowing()) {
@@ -258,19 +260,40 @@ public class DashboardView extends Application {
 
             Button cadButton = new Button("Cadastrar");
             cadButton.setOnAction(e -> {
-                String code = numberTextField.getText();
-                String nameProduct = nameTextField.getText();
-                String priceProduct = priceTextField.getText();
+                String code = numberTextField.getText().trim();
+                String nameProduct = nameTextField.getText().trim();
+                String priceProduct = openModalController.normalizePrice(priceTextField.getText().trim()); // Normaliza o preço
                 String groupProduct = groupComboBox.getValue();
 
-                if (databaseProduct.isProductCodeExists(code)) {
-                    showAlert(Alert.AlertType.ERROR, "Erro", "Código de produto já existe.");
-                    return;
-                }
+                try {
+                    // Verifica se todos os campos obrigatórios estão preenchidos
+                    if (code.isEmpty() || nameProduct.isEmpty() || groupProduct == null || groupProduct.isEmpty()) {
+                        showAlert(Alert.AlertType.ERROR, "Erro", "Todos os campos (Código, Nome, e Grupo) devem ser preenchidos.");
+                        return;
+                    }
 
-                databaseProduct.insertProductIntoDatabase(code, nameProduct, priceProduct, groupProduct);
-                cadStage.close();
-                cadStage = null;
+                    // Verifica se o código do produto já existe
+                    if (databaseProduct.isProductCodeExists(code)) {
+                        showAlert(Alert.AlertType.ERROR, "Erro", "Código de produto já existe.");
+                        return;
+                    }
+
+                    // Verifica se o preço é válido
+                    try {
+                        Double.parseDouble(priceProduct); // Tenta converter para Double
+                    } catch (NumberFormatException ex) {
+                        showAlert(Alert.AlertType.ERROR, "Erro", "Preço inválido.");
+                        return;
+                    }
+
+                    // Insere o produto no banco de dados
+                    databaseProduct.insertProductIntoDatabase(code, nameProduct, priceProduct, groupProduct);
+                    cadStage.close();
+                    cadStage = null;
+                } catch (Exception ex) {
+                    // Captura qualquer exceção não esperada e mostra uma mensagem de erro
+                    showAlert(Alert.AlertType.ERROR, "Erro", "Ocorreu um erro ao cadastrar o produto: " + ex.getMessage());
+                }
             });
 
             vbox.getChildren().addAll(numberLabel, numberTextField, nameLabel, nameTextField, priceLabel, priceTextField, groupLabel, groupLayout, cadButton);

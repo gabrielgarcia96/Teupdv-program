@@ -524,7 +524,13 @@ public class OpenModalController {
     }
 
 
-
+    public String normalizePrice(String price) {
+        if (price == null || price.isEmpty()) {
+            return "0.00"; // Retorna um valor padrão se o campo estiver vazio
+        }
+        // Substitui a vírgula por ponto
+        return price.replace(',', '.');
+    }
 
 
     private boolean validatePassword(String password) {
