@@ -13,7 +13,7 @@ import java.net.URL;
 public class GitHubAPI {
 
     private static final String API_URL = "https://api.github.com/repos/gabrielgarcia96/Teupdv-program/releases";
-    private static final String GITHUB_TOKEN = "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";
+    private static final String GITHUB_TOKEN = "";
 
     private static HttpURLConnection createConnection(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
