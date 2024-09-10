@@ -62,8 +62,35 @@ public class Updater {
                     alert.setTitle("Atualização Concluída");
                     alert.setHeaderText(null);
                     alert.setContentText("A atualização foi concluída com sucesso. Por favor, reinicie o software para aplicar as mudanças.");
-                    alert.showAndWait();
-                    System.exit(0);
+
+                    alert.showAndWait().ifPresent(response -> {
+                        // Fechar a instância atual
+                        Platform.exit();
+
+                        // Reiniciar o aplicativo
+                        try {
+                            String javaBin = System.getProperty("java.home") + "/bin/java";
+                            File currentJar = new File(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+                            if (!currentJar.getName().endsWith(".jar")) {
+                                throw new RuntimeException("Este aplicativo não está em um arquivo JAR.");
+                            }
+
+                            ProcessBuilder builder = new ProcessBuilder(
+                                    javaBin,
+                                    "-cp",
+                                    currentJar.getPath(),
+                                    "com.garciasolutions.teupdv.models.view.Main" // Nome completo da classe principal
+                            );
+
+                            builder.start();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            System.out.println("Erro ao reiniciar o aplicativo: " + e.getMessage());
+                        }
+
+                        // Encerrar a instância atual
+                        System.exit(0);
+                    });
                 }
 
                 @Override
