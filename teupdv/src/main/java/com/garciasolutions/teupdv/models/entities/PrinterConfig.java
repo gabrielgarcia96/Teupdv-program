@@ -7,7 +7,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.print.Printer;
-import javafx.print.PrinterJob;
 
 import java.sql.*;
 
@@ -59,24 +58,25 @@ public class PrinterConfig {
         });
 
         vbox.getChildren().addAll(label, printerComboBox, selectedPrinterLabel, saveButton);
-        stage.setScene(new Scene(vbox, 300, 200));
+        stage.setScene(new Scene(vbox, 320, 200));
         stage.setTitle("Configuração da Impressora");
         stage.show();
     }
-
 
     private void savePrinterToDatabase(String printerName) {
         String url = "jdbc:sqlite:dbgs_restaurante.db"; // Substitua com o caminho do seu banco de dados
         createPrinterConfigTableIfNotExists(url); // Cria a tabela se não existir
 
-        String sql = "INSERT OR REPLACE INTO printer_config(id, printer_name) VALUES((SELECT id FROM printer_config ORDER BY id DESC LIMIT 1), ?)";
+        String sql = "INSERT OR REPLACE INTO printer_config(id, printer_name) " +
+                "VALUES((SELECT id FROM printer_config ORDER BY id DESC LIMIT 1), ?)";
 
         try (Connection conn = DriverManager.getConnection(url);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, printerName);
             pstmt.executeUpdate();
+            System.out.println("Impressora salva no banco de dados com sucesso.");
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Erro ao salvar a impressora no banco de dados: " + e.getMessage());
         }
     }
 
@@ -98,8 +98,7 @@ public class PrinterConfig {
                 System.out.println("Tabela 'printer_config' criada com sucesso.");
             }
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Erro ao criar a tabela 'printer_config': " + e.getMessage());
         }
     }
-
 }

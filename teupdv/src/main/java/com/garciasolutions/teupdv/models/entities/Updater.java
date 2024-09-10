@@ -31,6 +31,9 @@ public class Updater {
         String localVersion = getLocalVersion();
         String remoteVersion = getLatestVersion();
 
+        System.out.println("Versão local: " + localVersion);
+        System.out.println("Versão remota: " + remoteVersion);
+
         if (localVersion.equals(remoteVersion)) {
             showAlert(Alert.AlertType.INFORMATION, "Atualização", "O software já está na versão mais recente.");
             return false; // Nenhuma atualização necessária
@@ -46,7 +49,7 @@ public class Updater {
                         downloadAndUpdateSoftware(remoteVersion);
                         return true;
                     } catch (IOException e) {
-                        e.printStackTrace(); // Adicionar logging para erros de download
+                        System.out.println("Erro ao atualizar o software: " + e.getMessage());
                         return false;
                     }
                 }
@@ -79,7 +82,6 @@ public class Updater {
             return true; // Atualização iniciada
         }
     }
-
 
     private static void showProgressIndicator(Window owner) {
         if (progressStage == null) {
@@ -184,7 +186,6 @@ public class Updater {
             throw new IOException("Failed to download file. HTTP response code: " + responseCode);
         }
     }
-
 
     private static void showAlert(Alert.AlertType alertType, String title, String content) {
         Alert alert = new Alert(alertType);
