@@ -1,0 +1,40 @@
+LICENSE AGREEMENT
+
+IMPORTANT: PLEASE READ THIS LICENSE AGREEMENT CAREFULLY BEFORE USING THIS SOFTWARE.
+
+1. LICENSE GRANT
+   Teupdv grants you a non-exclusive, non-transferable license to install and use the "Teupdv" software on a single computer, provided that you have paid the installation fee and continue to pay the monthly subscription fee.
+
+2. PAYMENT TERMS
+   a. INSTALLATION FEE: A one-time payment is required to install the software.
+   b. MONTHLY SUBSCRIPTION: A recurring monthly payment is required to continue using the software and to receive ongoing support.
+
+3. SUPPORT
+   After paying the monthly subscription fee, you are entitled to 24-hour support provided by Teupdv. Support includes assistance with software issues, problem resolution, and updates.
+
+4. RESTRICTIONS
+   You may not:
+
+   Copy, modify, distribute, or create derivative works based on this software.
+   Reverse engineer, decompile, or disassemble the software.
+   Transfer or sublicense this license to any third party without prior written consent from Teupdv.
+5. COPYRIGHT
+   This software is protected by copyright laws and international treaties. All rights, titles, and interests in the software remain with Teupdv.
+
+6. DISCLAIMER OF WARRANTY
+   This software is provided "as is" without any warranties. Teupdv disclaims all warranties, express or implied, including but not limited to implied warranties of merchantability and fitness for a particular purpose.
+
+7. TERMINATION
+   This license is effective until terminated. Teupdv may terminate this license if you fail to comply with any of the terms and conditions. Upon termination, you must destroy all copies of the software and cease using it.
+
+8. APPLICABLE LAW
+   This agreement will be governed and interpreted in accordance with the laws of Brazil.
+
+9. CONTACT INFORMATION
+   For support and questions regarding this license, please contact Teupdv at:
+   Website: www.teupdv.com.br
+   Email: suporte@teupdv.com.br
+
+   By installing and using this software, you acknowledge that you have read, understood, and agree to the terms of this License Agreement.
+
+Teupdv
