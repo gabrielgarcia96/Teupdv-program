@@ -75,11 +75,13 @@ public class Updater {
                                 throw new RuntimeException("Este aplicativo não está em um arquivo JAR.");
                             }
 
+                            String jarPath = "C:/teupdv_data/teupdv.jar";
+
+                            // Cria um novo processo para iniciar a nova instância do aplicativo
                             ProcessBuilder builder = new ProcessBuilder(
                                     javaBin,
-                                    "-cp",
-                                    currentJar.getPath(),
-                                    "com.garciasolutions.teupdv.models.view.Main" // Nome completo da classe principal
+                                    "-jar",
+                                    jarPath
                             );
 
                             builder.start();
