@@ -51,6 +51,14 @@
             <version>20210307</version>
         </dependency>
 
+        <!--  migrations -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>9.8.1</version> <!-- Use a versão mais recente disponível -->
+        </dependency>
+
+
     </dependencies>
 
     <build>
