@@ -2,11 +2,9 @@ package com.garciasolutions.teupdv.models.view;
 
 import com.garciasolutions.teupdv.models.controller.OpenModalController;
 import com.garciasolutions.teupdv.models.data.DatabaseProduct;
-import com.garciasolutions.teupdv.models.entities.AcessLevel;
-import com.garciasolutions.teupdv.models.entities.SelectedProduct;
-import com.garciasolutions.teupdv.models.entities.Updater;
-import com.garciasolutions.teupdv.models.entities.Venda;
+import com.garciasolutions.teupdv.models.entities.*;
 import javafx.application.Application;
+import javafx.collections.ObservableSet;
 import javafx.geometry.Pos;
 import javafx.print.*;
 import javafx.print.Paper;
@@ -19,7 +17,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.text.Text;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -28,17 +25,15 @@ import javafx.stage.Stage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.control.Alert;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Date;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import javafx.scene.control.ProgressIndicator;
+import javafx.print.Printer;
+import java.util.List;
 
 public class DashboardView extends Application {
 
@@ -50,6 +45,7 @@ public class DashboardView extends Application {
     private double totalAmount = 0.0;
     private Map<String, SelectedProduct> selectedProducts = new HashMap<>();
     private static final String VERSION_FILE_PATH = "C:/teupdv_data/version.properties";
+    private PrintManager printManager;
 
     public DashboardView(AcessLevel accessLevel) {
         this.accessLevel = accessLevel;
@@ -65,8 +61,7 @@ public class DashboardView extends Application {
     public void start(Stage stage) throws Exception {
         databaseProduct = new DatabaseProduct();
         openModalController = new OpenModalController(databaseProduct);
-
-
+        printManager = new PrintManager();
 
         // Menu
         MenuBar menuBar = new MenuBar();
@@ -79,12 +74,16 @@ public class DashboardView extends Application {
         Menu menuSettings = new Menu("Configurações");
         MenuItem cadFiscal = new MenuItem("Cadastro Fiscal");
         MenuItem registerUserItem = new MenuItem("Cadastrar Usuário");
+        MenuItem impScanner = new MenuItem("Impressora Config");
         MenuItem updateItem = new MenuItem("Atualizar Software");
 
-        menuSettings.getItems().addAll(cadFiscal, registerUserItem, updateItem);
-        menuBar.getMenus().addAll(menuProducts, menuReports, menuSettings);
+
         menuProducts.getItems().setAll(cadProducts, listProducts);
+        menuSettings.getItems().addAll(cadFiscal, registerUserItem, impScanner ,updateItem);
         menuReports.getItems().setAll(generateReport, generateCancelationReport);
+
+        // Aidiconar itens ao MenuBar para ficar visivel
+        menuBar.getMenus().addAll(menuProducts, menuReports, menuSettings);
 
         // Version Label
         Label versionLabel = new Label("Versão: " + getSoftwareVersion());
@@ -223,10 +222,6 @@ public class DashboardView extends Application {
             }
         });
 
-
-
-
-
         // Actions for Menu Items
         cadProducts.setOnAction(event -> {
             if (cadStage != null && cadStage.isShowing()) {
@@ -299,6 +294,9 @@ public class DashboardView extends Application {
             vbox.getChildren().addAll(numberLabel, numberTextField, nameLabel, nameTextField, priceLabel, priceTextField, groupLabel, groupLayout, cadButton);
         });
 
+        // impressora config teste!
+        impScanner.setOnAction(e -> new PrinterConfig().showPrinterConfigModal());
+
         registerUserItem.setOnAction(event -> openModalController.openUserRegistrationModal());
 
         listProducts.setOnAction(event -> {
@@ -354,6 +352,8 @@ public class DashboardView extends Application {
 
     }
 
+
+
     ///
 
     private SelectedProduct getSelectedProduct() {
@@ -376,9 +376,6 @@ public class DashboardView extends Application {
             salesListView.getItems().add(product.toString());
         }
     }
-
-
-
 
     private void updateTotalAmount() {
         totalAmount = 0.0;
@@ -463,14 +460,92 @@ public class DashboardView extends Application {
                 double total = totalAmount;
                 System.out.println("Forma de pagamento: " + paymentMethod);
                 System.out.println("Total a pagar: R$" + String.format("%.2f", total));
-                openPrintReceiptModal(paymentMethod);
+                 openPrintReceiptModal(paymentMethod);
              //   printNFCE(paymentMethod); // Imprime o comprovante apos clicar no tipo de pagamento
             }
     }
 
 
 
+    public void openPrintReceiptModal(String paymentMethod) {
+        Stage printStage = new Stage();
+        VBox vbox = new VBox(10);
+        vbox.setAlignment(Pos.CENTER);
 
+        Label printLabel = new Label("Deseja imprimir o comprovante?");
+        Button yesButton = new Button("Sim");
+        Button noButton = new Button("Não");
+
+        yesButton.setOnAction(e -> {
+            printReceipt(paymentMethod); // Passe o método de pagamento aqui
+            printStage.close();
+        });
+
+        noButton.setOnAction(e -> printStage.close());
+
+        vbox.getChildren().addAll(printLabel, yesButton, noButton);
+        printStage.setScene(new Scene(vbox, 300, 150));
+        printStage.setTitle("Imprimir Comprovante");
+        printStage.show();
+    }
+
+
+    public void printReceipt(String paymentMethod) {
+        Printer printer = printManager.getSavedPrinter();
+        if (printer == null) {
+            showErrorDialog("Falha na impressão", "Nenhuma impressora configurada. Para suporte, clique no link abaixo.");
+            return;
+        }
+
+        PrinterJob printerJob = PrinterJob.createPrinterJob();
+        if (printerJob != null && printerJob.getPrinter().equals(printer)) {
+            // Configurando o tamanho da bobina térmica em milímetros
+            double widthMM = 80;
+            double heightMM = 80;
+
+            // Convertendo milímetros para pontos
+            double widthInPoints = widthMM * 72 / 25.4;
+            double heightInPoints = heightMM * 72 / 25.4;
+
+            // Criando o layout da página com margens mínimas
+            PageLayout pageLayout = printer.createPageLayout(
+                    Paper.A4,
+                    PageOrientation.PORTRAIT,
+                    Printer.MarginType.HARDWARE_MINIMUM
+            );
+
+            // Configurando o texto a ser impresso
+            javafx.scene.text.Text textNode = new javafx.scene.text.Text(getNFCEText(paymentMethod));
+            textNode.setFont(new javafx.scene.text.Font("Times New Roman", 9)); // Define o tamanho da fonte
+            textNode.setWrappingWidth(widthInPoints); // Ajusta para a largura da bobina
+
+            // Imprimindo a página diretamente
+            boolean success = printerJob.printPage(pageLayout, textNode);
+            if (success) {
+                printerJob.endJob();
+            } else {
+                showErrorDialog("Falha na impressão", "Houve uma falha ao tentar imprimir. Para suporte, clique no link abaixo.");
+            }
+        } else {
+            showErrorDialog("Falha na impressão", "Não foi possível criar o trabalho de impressão. Para suporte, clique no link abaixo.");
+        }
+    }
+
+    private void showErrorDialog(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+
+        // Criando o conteúdo com um Hyperlink
+        Hyperlink link = new Hyperlink("Entrar em contato via WhatsApp, Clique Aqui!");
+        link.setOnAction(e -> getHostServices().showDocument("https://wa.me/5551995000151"));
+
+        VBox content = new VBox();
+        content.getChildren().addAll(new Text(message), link);
+        alert.getDialogPane().setContent(content);
+
+        alert.showAndWait();
+    }
 
     private double amountGiven = 0.0; // Variável para armazenar o valor dado
 
@@ -531,65 +606,7 @@ public class DashboardView extends Application {
     }
 
 
-    private void openPrintReceiptModal(String paymentMethod) {
-        Stage printStage = new Stage();
-        VBox vbox = new VBox(10);
-        vbox.setAlignment(Pos.CENTER);
 
-        Label printLabel = new Label("Deseja imprimir o comprovante?");
-        Button yesButton = new Button("Sim");
-        Button noButton = new Button("Não");
-
-        yesButton.setOnAction(e -> {
-            printReceipt(paymentMethod); // Passe o método de pagamento aqui
-            printStage.close();
-        });
-
-        noButton.setOnAction(e -> printStage.close());
-
-        vbox.getChildren().addAll(printLabel, yesButton, noButton);
-        printStage.setScene(new Scene(vbox, 300, 150));
-        printStage.setTitle("Imprimir Comprovante");
-        printStage.show();
-    }
-
-
-    private void printReceipt(String paymentMethod) {
-        PrinterJob printerJob = PrinterJob.createPrinterJob();
-        if (printerJob != null) {
-            Printer printer = printerJob.getPrinter();
-
-            // Configurando o tamanho da bobina térmica em milímetros
-            double widthMM = 80;
-            double heightMM = 80;
-
-            // Convertendo milímetros para pontos (1 polegada = 72 pontos; 1 polegada = 25.4 mm)
-            double widthInPoints = widthMM * 72 / 25.4;
-            double heightInPoints = heightMM * 72 / 25.4;
-
-            // Criando o layout da página com margens mínimas
-            PageLayout pageLayout = printer.createPageLayout(
-                    Paper.A4,
-                    PageOrientation.PORTRAIT,
-                    Printer.MarginType.HARDWARE_MINIMUM
-            );
-
-            // Configurando o texto a ser impresso
-            javafx.scene.text.Text textNode = new javafx.scene.text.Text(getNFCEText(paymentMethod));
-            textNode.setFont(new javafx.scene.text.Font("Times New Roman", 9)); // Define o tamanho da fonte
-            textNode.setWrappingWidth(widthInPoints); // Ajusta para a largura da bobina
-
-            // Imprimindo a página diretamente
-            boolean success = printerJob.printPage(pageLayout, textNode);
-            if (success) {
-                printerJob.endJob();
-            } else {
-                System.out.println("Falha na impressão.");
-            }
-        } else {
-            System.out.println("Falha ao criar o trabalho de impressão.");
-        }
-    }
 
     private String getNFCEText(String paymentMethod) {
         String[] fiscalData = databaseProduct.getFiscalData(); // Obtém os dados fiscais
@@ -640,38 +657,6 @@ public class DashboardView extends Application {
         return nfce.toString();
     }
 
-    private void printNFCE(String paymentMethod) {
-        PrinterJob printerJob = PrinterJob.createPrinterJob();
-        if (printerJob != null) {
-            Printer printer = printerJob.getPrinter();
-
-            // Configurando o tamanho da bobina térmica em milímetros
-            double widthMM = 80;
-            double heightMM = 80;
-
-            double widthInPoints = widthMM * 72 / 25.4;
-            double heightInPoints = heightMM * 72 / 25.4;
-
-            PageLayout pageLayout = printer.createPageLayout(
-                    Paper.A4,
-                    PageOrientation.PORTRAIT,
-                    Printer.MarginType.HARDWARE_MINIMUM
-            );
-
-            javafx.scene.text.Text textNode = new javafx.scene.text.Text(getNFCEText(paymentMethod));
-            textNode.setFont(new javafx.scene.text.Font("Times New Roman", 9)); // Ajuste o tamanho da fonte
-            textNode.setWrappingWidth(widthInPoints);
-
-            boolean success = printerJob.printPage(pageLayout, textNode);
-            if (success) {
-                printerJob.endJob();
-            } else {
-                System.out.println("Falha na impressão.");
-            }
-        } else {
-            System.out.println("Falha ao criar o trabalho de impressão.");
-        }
-    }
 
     private void openProductSearchModal(String searchText) {
         if (searchStage != null && searchStage.isShowing()) {
