@@ -6,6 +6,7 @@ import com.garciasolutions.teupdv.models.data.DatabaseUser;
 import com.garciasolutions.teupdv.models.entities.AcessLevel;
 import com.garciasolutions.teupdv.models.entities.UserSession;
 import com.garciasolutions.teupdv.models.entities.Venda;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -13,13 +14,16 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
+import javafx.util.StringConverter;
+import javafx.util.converter.DoubleStringConverter;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class OpenModalController {
@@ -232,12 +236,38 @@ public class OpenModalController {
 
         TableColumn<Venda, Double> priceColumn = new TableColumn<>("Preço");
         priceColumn.setCellValueFactory(new PropertyValueFactory<>("preco"));
+        priceColumn.setCellFactory(column -> new TableCell<Venda, Double>() {
+            private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(currencyFormat.format(item).replace("R$", "R$ ").replace(".", ","));
+                }
+            }
+        });
 
         TableColumn<Venda, Integer> quantityColumn = new TableColumn<>("Quantidade");
         quantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantidade"));
 
         TableColumn<Venda, Double> totalColumn = new TableColumn<>("Total");
         totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
+        totalColumn.setCellFactory(column -> new TableCell<Venda, Double>() {
+            private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(currencyFormat.format(item).replace("R$", "R$ ").replace(".", ","));
+                }
+            }
+        });
 
         TableColumn<Venda, String> dateColumn = new TableColumn<>("Data");
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("data"));
@@ -245,58 +275,54 @@ public class OpenModalController {
         TableColumn<Venda, String> paymentMethodColumn = new TableColumn<>("Forma de Pagamento");
         paymentMethodColumn.setCellValueFactory(new PropertyValueFactory<>("paymentMethod"));
 
-        TableColumn<Venda, Void> cancelColumn = new TableColumn<>("Cancelar");
-        cancelColumn.setCellFactory(column -> new TableCell<Venda, Void>() {
-            private final Button cancelButton = new Button("Cancelar");
+        tableView.getColumns().addAll(codeColumn, nameColumn, priceColumn, quantityColumn, totalColumn, dateColumn, paymentMethodColumn);
 
-            {
-                cancelButton.setOnAction(e -> {
-                    Venda venda = getTableView().getItems().get(getIndex());
-                    System.out.println("Venda selecionada: ID = " + venda.getId()); // Debug: Verifique o ID
-                    openCancelModal(venda);
-                });
-            }
-
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(cancelButton);
-                }
-            }
-        });
-
-        tableView.getColumns().addAll(codeColumn, nameColumn, priceColumn, quantityColumn, totalColumn, dateColumn, paymentMethodColumn, cancelColumn);
-
-        // Criar um Label para mostrar o total das vendas
         Label totalLabel = new Label();
         totalLabel.setStyle("-fx-font-size: 14px;");
 
-        // Função para atualizar a tabela e o total
-        updateTableAndTotal(startDate, endDate, tableView, totalLabel, null);
+        // Adicionar o botão de cancelamento
+        Button cancelButton = new Button("Cancelar");
+        cancelButton.setPadding(new Insets(10, 10, 10, 10));
+        cancelButton.setOnAction(e -> {
+            Venda vendaSelecionada = tableView.getSelectionModel().getSelectedItem();
+            if (vendaSelecionada != null) {
+                System.out.println("Venda selecionada: ID = " + vendaSelecionada.getId());
+                openCancelModal(vendaSelecionada);
+            } else {
+                System.out.println("Nenhuma venda selecionada para cancelar.");
+            }
+        });
 
         // Adicionar EventHandlers aos MenuItems
         cashItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Dinheiro"));
         creditCardItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Cartão de Crédito"));
         debitCardItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Cartão de Débito"));
         pixItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Pix"));
-        allItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, null));
+        allItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, null)); // Mostrar todas as vendas
 
+        VBox vboxContainer = new VBox(10);
+        vboxContainer.setAlignment(Pos.CENTER);
+        vboxContainer.getChildren().addAll(tableView, totalLabel);
+        VBox.setMargin(cancelButton, new Insets(10, 10, 10, 10));
 
-
-        vbox.getChildren().addAll(tableView, totalLabel);
+        BorderPane bottomPane = new BorderPane();
+        bottomPane.setRight(cancelButton);
 
         BorderPane borderPane = new BorderPane();
         borderPane.setTop(menuBar);
-        borderPane.setCenter(vbox);
+        borderPane.setCenter(vboxContainer);
+        borderPane.setBottom(bottomPane);
 
-        Scene scene = new Scene(borderPane, 800, 600);
+        Scene scene = new Scene(borderPane, 1024, 600);
         reportDisplayStage.setScene(scene);
         reportDisplayStage.setTitle("Relatório de Vendas");
+
+        // Chama o metodo com todas as vendas ao abrir o relatório
+        updateTableAndTotal(startDate, endDate, tableView, totalLabel, null);
+
         reportDisplayStage.show();
     }
+
 
 
     private void updateTableAndTotal(LocalDate startDate, LocalDate endDate, TableView<Venda> tableView, Label totalLabel, String paymentMethodFilter) {
@@ -368,6 +394,7 @@ public class OpenModalController {
         priceColumn.setCellValueFactory(new PropertyValueFactory<>("preco"));
         // Estilizar as células para exibir em vermelho se a venda estiver cancelada
         priceColumn.setCellFactory(column -> new TableCell<Venda, Double>() {
+            private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
@@ -377,6 +404,7 @@ public class OpenModalController {
                 } else {
                     setText(String.valueOf(item));
                     setStyle("-fx-text-fill: red;"); // Estilo para células com motivo
+                    setText(currencyFormat.format(item).replace("R$", "R$ ").replace(".", ","));
                 }
             }
         });
@@ -401,6 +429,7 @@ public class OpenModalController {
         totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
         // Estilizar as células para exibir em vermelho se a venda estiver cancelada
         totalColumn.setCellFactory(column -> new TableCell<Venda, Double>() {
+            private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
@@ -410,6 +439,7 @@ public class OpenModalController {
                 } else {
                     setText(String.valueOf(item));
                     setStyle("-fx-text-fill: red;"); // Estilo para células com motivo
+                    setText(currencyFormat.format(item).replace("R$", "R$ ").replace(".", ","));
                 }
             }
         });
@@ -493,8 +523,10 @@ public class OpenModalController {
 
         Label reasonLabel = new Label("Motivo:");
         TextField reasonTextField = new TextField(); // Inicialização do campo de texto
+        reasonTextField.setMaxWidth(200);
         Label passwordLabel = new Label("Senha:");
         PasswordField passwordField = new PasswordField(); // Inicialização do campo de senha
+        passwordField.setMaxWidth(200);
 
         Button cancelButton = new Button("Confirmar Cancelamento");
         cancelButton.setOnAction(e -> {

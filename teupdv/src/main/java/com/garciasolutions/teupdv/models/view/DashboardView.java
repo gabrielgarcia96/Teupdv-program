@@ -91,7 +91,7 @@ public class DashboardView extends Application {
 
         // Dashboard Layout
         BorderPane mainLayout = new BorderPane();
-        Scene scene = new Scene(mainLayout, 800, 580);
+        Scene scene = new Scene(mainLayout, 1280, 720);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         stage.setScene(scene);
         stage.setTitle("Dashboard");
