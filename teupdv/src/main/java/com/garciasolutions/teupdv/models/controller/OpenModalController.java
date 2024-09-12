@@ -16,8 +16,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
-
-import java.io.File;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -305,14 +303,6 @@ public class OpenModalController {
             }
         });
 
-        // Botão de Baixar PDF
-        Button downloadPdfButton = new Button("Baixar PDF");
-        downloadPdfButton.setPadding(new Insets(10, 10, 10, 10));
-        downloadPdfButton.setOnAction(e -> {
-            double totalSales = calculateTotalSales(tableView); // Calcular o total das vendas
-            generatePdfReport(tableView, startDate, endDate, totalSales);
-        });
-
         // Adicionar EventHandlers aos MenuItems
         cashItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Dinheiro"));
         creditCardItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Cartão de Crédito"));
@@ -322,7 +312,7 @@ public class OpenModalController {
 
         VBox vboxContainer = new VBox(10);
         vboxContainer.setAlignment(Pos.CENTER);
-        vboxContainer.getChildren().addAll(tableView, totalLabel, downloadPdfButton);
+        vboxContainer.getChildren().addAll(tableView, totalLabel);
         VBox.setMargin(cancelButton, new Insets(10, 10, 10, 10));
 
         BorderPane bottomPane = new BorderPane();
@@ -342,67 +332,6 @@ public class OpenModalController {
 
         reportDisplayStage.show();
     }
-
-    private double calculateTotalSales(TableView<Venda> tableView) {
-        double total = 0.0;
-        for (Venda venda : tableView.getItems()) {
-            if (venda.getTotal() != null) {
-                total += venda.getTotal();
-            }
-        }
-        return total;
-    }
-
-    private void generatePdfReport(TableView<Venda> tableView, LocalDate startDate, LocalDate endDate, double totalSales) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new ExtensionFilter("PDF Files", "*.pdf"));
-        File file = fileChooser.showSaveDialog(null);
-        if (file != null) {
-            try {
-                PdfWriter writer = new PdfWriter(file);
-                PdfDocument pdf = new PdfDocument(writer);
-                Document document = new Document(pdf);
-
-                // Título com intervalo de datas
-                document.add(new Paragraph("Relatório de Vendas")
-                        .setFontSize(18)
-                        .setBold());
-                document.add(new Paragraph(String.format("Período: %s a %s", startDate, endDate))
-                        .setFontSize(12));
-
-                // Total de vendas
-                document.add(new Paragraph(String.format("Total das Vendas: R$ %.2f", totalSales))
-                        .setFontSize(12));
-
-                // Cabeçalho da Tabela
-                Table table = new Table(7); // Número de colunas
-                table.addHeaderCell("Código");
-                table.addHeaderCell("Nome");
-                table.addHeaderCell("Preço");
-                table.addHeaderCell("Quantidade");
-                table.addHeaderCell("Total");
-                table.addHeaderCell("Data");
-                table.addHeaderCell("Forma de Pagamento");
-
-                // Adiciona as linhas da TableView
-                for (Venda venda : tableView.getItems()) {
-                    table.addCell(venda.getCodigoProduto() != null ? venda.getCodigoProduto() : "");
-                    table.addCell(venda.getNomeProduto() != null ? venda.getNomeProduto() : "");
-                    table.addCell(venda.getPreco() != null ? String.format("R$ %.2f", venda.getPreco()) : "R$ 0,00");
-                    table.addCell(venda.getQuantidade() != null ? String.valueOf(venda.getQuantidade()) : "0");
-                    table.addCell(venda.getTotal() != null ? String.format("R$ %.2f", venda.getTotal()) : "R$ 0,00");
-                    table.addCell(venda.getData() != null ? venda.getData().toString() : "N/A");
-                    table.addCell(venda.getPaymentMethod() != null ? venda.getPaymentMethod() : "N/A");
-                }
-
-                document.add(table);
-                document.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
-
 
 
 
