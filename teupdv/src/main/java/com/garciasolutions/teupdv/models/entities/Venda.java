@@ -16,16 +16,16 @@ public class Venda {
     private boolean cancelada;
     private String codigoProduto;
     private String nomeProduto;
-    private double valor;
-    private double preco;
-    private int quantidade;
-    private double total;
+    private Double valor;
+    private Double preco;
+    private Integer quantidade;
+    private Double total;
     private Date data;
     private String paymentMethod;
     private String motivoCancelamento;
 
     // Construtor
-    public Venda(int id, String codigoProduto, String nomeProduto, double valor, double preco, int quantidade, Date data, String paymentMethod, String motivoCancelamento) {
+    public Venda(int id, String codigoProduto, String nomeProduto, Double valor, Double preco, Integer quantidade, Date data, String paymentMethod, String motivoCancelamento) {
         this.id = id;
         this.codigoProduto = codigoProduto;
         this.nomeProduto = nomeProduto;
@@ -49,9 +49,9 @@ public class Venda {
     public int getId() {return id;}
     public String getCodigoProduto() { return codigoProduto; }
     public String getNomeProduto() { return nomeProduto; }
-    public double getPreco() { return preco; }
-    public int getQuantidade() { return quantidade; }
-    public double getTotal() { return total; }
+    public Double getPreco() { return preco; }
+    public Integer getQuantidade() { return quantidade; }
+    public Double getTotal() { return total; }
     public Date getData() { return data; }
     public String getPaymentMethod() { return paymentMethod; }
     public String getMotivoCancelamento() { return motivoCancelamento; }
@@ -60,9 +60,9 @@ public class Venda {
     public void setId(int id) { this.id = id; }
     public void setCodigoProduto(String codigoProduto) { this.codigoProduto = codigoProduto; }
     public void setNomeProduto(String nomeProduto) { this.nomeProduto = nomeProduto; }
-    public void setPreco(double preco) { this.preco = preco; }
-    public void setQuantidade(int quantidade) { this.quantidade = quantidade; }
-    public void setTotal(double total) { this.total = total; }
+    public void setPreco(Double preco) { this.preco = preco; }
+    public void setQuantidade(Integer quantidade) { this.quantidade = quantidade; }
+    public void setTotal(Double total) { this.total = total; }
     public void setData(Date data) { this.data = data; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public void setMotivoCancelamento(String motivoCancelamento) { this.motivoCancelamento = motivoCancelamento; }
