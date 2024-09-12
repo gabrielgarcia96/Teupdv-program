@@ -8,7 +8,6 @@ import com.garciasolutions.teupdv.models.entities.Venda;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfDocument;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import javafx.geometry.Insets;
@@ -19,6 +18,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.Connection;
@@ -30,9 +30,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import org.flywaydb.core.internal.database.base.Table;
 
 
 public class OpenModalController {

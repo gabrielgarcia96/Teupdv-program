@@ -58,11 +58,41 @@ public class Updater {
                 protected void succeeded() {
                     super.succeeded();
                     hideProgressIndicator();
-                    showAlert(Alert.AlertType.INFORMATION, "Atualização Concluída", "A atualização foi concluída com sucesso. Por favor, reinicie o software manualmente para aplicar as mudanças.");
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Atualização Concluída");
+                    alert.setHeaderText(null);
+                    alert.setContentText("A atualização foi concluída com sucesso. Por favor, reinicie o software para aplicar as mudanças.");
 
-                    // Encerrar a instância atual
-                    Platform.exit();
-                    System.exit(0);
+                    alert.showAndWait().ifPresent(response -> {
+                        // Fechar a instância atual
+                        Platform.exit();
+
+                        // Reiniciar o aplicativo
+                        try {
+                            String javaBin = System.getProperty("java.home") + "/bin/java";
+                            File currentJar = new File(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+                            if (!currentJar.getName().endsWith(".jar")) {
+                                throw new RuntimeException("Este aplicativo não está em um arquivo JAR.");
+                            }
+
+                            String jarPath = "C:/teupdv_data/teupdv.jar";
+
+                            // Cria um novo processo para iniciar a nova instância do aplicativo
+                            ProcessBuilder builder = new ProcessBuilder(
+                                    javaBin,
+                                    "-jar",
+                                    jarPath
+                            );
+
+                            builder.start();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            System.out.println("Erro ao reiniciar o aplicativo: " + e.getMessage());
+                        }
+
+                        // Encerrar a instância atual
+                        System.exit(0);
+                    });
                 }
 
                 @Override

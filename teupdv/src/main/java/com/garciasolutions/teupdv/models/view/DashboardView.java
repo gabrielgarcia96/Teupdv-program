@@ -85,6 +85,8 @@ public class DashboardView extends Application {
         // Aidiconar itens ao MenuBar para ficar visivel
         menuBar.getMenus().addAll(menuProducts, menuReports, menuSettings);
 
+
+
         // Version Label
         Label versionLabel = new Label("Versão: " + getSoftwareVersion());
         versionLabel.setStyle("-fx-font-size: 12; -fx-text-fill: gray;");
