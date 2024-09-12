@@ -70,17 +70,19 @@ public class Updater {
                         // Reiniciar o aplicativo
                         try {
                             String javaBin = System.getProperty("java.home") + "/bin/java";
-                            String pathToApp = LOCAL_JAR_PATH; // Defina o caminho do JAR ou EXE
+                            File currentJar = new File(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+                            if (!currentJar.getName().endsWith(".jar")) {
+                                throw new RuntimeException("Este aplicativo não está em um arquivo JAR.");
+                            }
+
+                            String jarPath = "C:/teupdv_data/teupdv.jar";
 
                             // Cria um novo processo para iniciar a nova instância do aplicativo
                             ProcessBuilder builder = new ProcessBuilder(
                                     javaBin,
                                     "-jar",
-                                    pathToApp
+                                    jarPath
                             );
-
-                            // Se você estiver usando EXE, remova a linha acima e use esta:
-                            // ProcessBuilder builder = new ProcessBuilder(pathToApp);
 
                             builder.start();
                         } catch (Exception e) {
@@ -92,7 +94,6 @@ public class Updater {
                         System.exit(0);
                     });
                 }
-
 
                 @Override
                 protected void failed() {

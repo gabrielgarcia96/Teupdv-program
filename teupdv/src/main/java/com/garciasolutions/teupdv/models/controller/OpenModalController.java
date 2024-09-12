@@ -4,8 +4,13 @@ import com.garciasolutions.teupdv.models.data.DatabaseConnect;
 import com.garciasolutions.teupdv.models.data.DatabaseProduct;
 import com.garciasolutions.teupdv.models.data.DatabaseUser;
 import com.garciasolutions.teupdv.models.entities.AcessLevel;
-import com.garciasolutions.teupdv.models.entities.UserSession;
 import com.garciasolutions.teupdv.models.entities.Venda;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfDocument;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -14,10 +19,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.util.StringConverter;
-import javafx.util.converter.DoubleStringConverter;
-
 import java.io.File;
+import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -27,15 +30,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import com.itextpdf.io.font.constants.StandardFonts;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.element.Cell;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import org.flywaydb.core.internal.database.base.Table;
 
 
 public class OpenModalController {
@@ -359,30 +356,30 @@ public class OpenModalController {
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
             try {
-                PdfWriter writer = new PdfWriter(file);
-                PdfDocument pdf = new PdfDocument(writer);
-                Document document = new Document(pdf);
+                Document document = new Document();
+                PdfWriter.getInstance(document, new FileOutputStream(file));
+                document.open();
+
+                // Fontes
+                Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
+                Font textFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
 
                 // Título com intervalo de datas
-                document.add(new Paragraph("Relatório de Vendas")
-                        .setFontSize(18)
-                        .setBold());
-                document.add(new Paragraph(String.format("Período: %s a %s", startDate, endDate))
-                        .setFontSize(12));
+                document.add(new Paragraph("Relatório de Vendas", titleFont));
+                document.add(new Paragraph(String.format("Período: %s a %s", startDate, endDate), textFont));
 
                 // Total de vendas
-                document.add(new Paragraph(String.format("Total das Vendas: R$ %.2f", totalSales))
-                        .setFontSize(12));
+                document.add(new Paragraph(String.format("Total das Vendas: R$ %.2f", totalSales), textFont));
 
                 // Cabeçalho da Tabela
-                Table table = new Table(7); // Número de colunas
-                table.addHeaderCell("Código");
-                table.addHeaderCell("Nome");
-                table.addHeaderCell("Preço");
-                table.addHeaderCell("Quantidade");
-                table.addHeaderCell("Total");
-                table.addHeaderCell("Data");
-                table.addHeaderCell("Forma de Pagamento");
+                PdfPTable table = new PdfPTable(7); // Número de colunas
+                table.addCell("Código");
+                table.addCell("Nome");
+                table.addCell("Preço");
+                table.addCell("Quantidade");
+                table.addCell("Total");
+                table.addCell("Data");
+                table.addCell("Forma de Pagamento");
 
                 // Adiciona as linhas da TableView
                 for (Venda venda : tableView.getItems()) {

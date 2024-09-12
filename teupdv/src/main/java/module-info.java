@@ -5,9 +5,7 @@ module com.garciasolutions.teupdv {
     requires java.desktop;
     requires org.json;
     requires org.flywaydb.core;
-    requires io;
-    requires kernel;
-    requires layout;
+    requires itextpdf;
 
     opens com.garciasolutions.teupdv.models.controller to javafx.fxml;
     opens com.garciasolutions.teupdv.models.view to javafx.graphics;
