@@ -5,9 +5,8 @@ import com.garciasolutions.teupdv.models.data.DatabaseProduct;
 import com.garciasolutions.teupdv.models.data.DatabaseUser;
 import com.garciasolutions.teupdv.models.entities.AcessLevel;
 import com.garciasolutions.teupdv.models.entities.Venda;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.Font;
-import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import javafx.geometry.Insets;
@@ -27,6 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -351,45 +351,55 @@ public class OpenModalController {
     }
 
     private void generatePdfReport(TableView<Venda> tableView, LocalDate startDate, LocalDate endDate, double totalSales) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new ExtensionFilter("PDF Files", "*.pdf"));
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
             try {
-                Document document = new Document();
+                Document document = new Document(PageSize.A4);
                 PdfWriter.getInstance(document, new FileOutputStream(file));
                 document.open();
 
                 // Fontes
-                Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
-                Font textFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+                Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
+                Font textFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
 
                 // Título com intervalo de datas
                 document.add(new Paragraph("Relatório de Vendas", titleFont));
-                document.add(new Paragraph(String.format("Período: %s a %s", startDate, endDate), textFont));
+                document.add(new Paragraph(String.format("Período: %s a %s", startDate.format(formatter), endDate.format(formatter)), textFont));
+
+                // Adiciona espaçamento antes do total das vendas
+                document.add(new Paragraph(" ")); // Adiciona uma linha em branco para espaçamento
 
                 // Total de vendas
                 document.add(new Paragraph(String.format("Total das Vendas: R$ %.2f", totalSales), textFont));
 
+                // Adiciona espaçamento adicional antes da tabela
+                document.add(new Paragraph(" ")); // Adiciona uma linha em branco para espaçamento
+
                 // Cabeçalho da Tabela
                 PdfPTable table = new PdfPTable(7); // Número de colunas
-                table.addCell("Código");
-                table.addCell("Nome");
-                table.addCell("Preço");
-                table.addCell("Quantidade");
-                table.addCell("Total");
-                table.addCell("Data");
-                table.addCell("Forma de Pagamento");
+                table.setWidths(new float[]{1f, 2f, 2f, 1.5f, 2f, 2f, 2f}); // Definindo a largura das colunas
+
+                table.addCell(createCell("Código", textFont));
+                table.addCell(createCell("Nome", textFont));
+                table.addCell(createCell("Preço", textFont));
+                table.addCell(createCell("Quantidade", textFont));
+                table.addCell(createCell("Total", textFont));
+                table.addCell(createCell("Data", textFont));
+                table.addCell(createCell("Forma de Pagamento", textFont));
 
                 // Adiciona as linhas da TableView
                 for (Venda venda : tableView.getItems()) {
-                    table.addCell(venda.getCodigoProduto() != null ? venda.getCodigoProduto() : "");
-                    table.addCell(venda.getNomeProduto() != null ? venda.getNomeProduto() : "");
-                    table.addCell(venda.getPreco() != null ? String.format("R$ %.2f", venda.getPreco()) : "R$ 0,00");
-                    table.addCell(venda.getQuantidade() != null ? String.valueOf(venda.getQuantidade()) : "0");
-                    table.addCell(venda.getTotal() != null ? String.format("R$ %.2f", venda.getTotal()) : "R$ 0,00");
-                    table.addCell(venda.getData() != null ? venda.getData().toString() : "N/A");
-                    table.addCell(venda.getPaymentMethod() != null ? venda.getPaymentMethod() : "N/A");
+                    table.addCell(createCell(venda.getCodigoProduto() != null ? venda.getCodigoProduto() : "", textFont));
+                    table.addCell(createCell(venda.getNomeProduto() != null ? venda.getNomeProduto() : "", textFont));
+                    table.addCell(createCell(venda.getPreco() != null ? String.format("R$ %.2f", venda.getPreco()) : "R$ 0,00", textFont));
+                    table.addCell(createCell(venda.getQuantidade() != null ? String.valueOf(venda.getQuantidade()) : "0", textFont));
+                    table.addCell(createCell(venda.getTotal() != null ? String.format("R$ %.2f", venda.getTotal()) : "R$ 0,00", textFont));
+                    table.addCell(createCell(venda.getData() != null ? venda.getData().toString() : "N/A", textFont));
+                    table.addCell(createCell(venda.getPaymentMethod() != null ? venda.getPaymentMethod() : "N/A", textFont));
                 }
 
                 document.add(table);
@@ -400,6 +410,11 @@ public class OpenModalController {
         }
     }
 
+    private PdfPCell createCell(String text, Font font) {
+        PdfPCell cell = new PdfPCell(new Paragraph(text, font));
+        cell.setPadding(5); // Adiciona padding interno para cada célula
+        return cell;
+    }
 
 
 
