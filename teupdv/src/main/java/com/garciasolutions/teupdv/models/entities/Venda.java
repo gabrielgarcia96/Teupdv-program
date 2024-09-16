@@ -20,12 +20,12 @@ public class Venda {
     private Double preco;
     private Integer quantidade;
     private Double total;
-    private Date data;
+    private LocalDate data;
     private String paymentMethod;
     private String motivoCancelamento;
 
     // Construtor
-    public Venda(int id, String codigoProduto, String nomeProduto, Double valor, Double preco, Integer quantidade, Date data, String paymentMethod, String motivoCancelamento) {
+    public Venda(int id, String codigoProduto, String nomeProduto, Double valor, Double preco, Integer quantidade, LocalDate data, String paymentMethod, String motivoCancelamento) {
         this.id = id;
         this.codigoProduto = codigoProduto;
         this.nomeProduto = nomeProduto;
@@ -52,7 +52,7 @@ public class Venda {
     public Double getPreco() { return preco; }
     public Integer getQuantidade() { return quantidade; }
     public Double getTotal() { return total; }
-    public Date getData() { return data; }
+    public LocalDate getData() { return data; }
     public String getPaymentMethod() { return paymentMethod; }
     public String getMotivoCancelamento() { return motivoCancelamento; }
 
@@ -63,7 +63,7 @@ public class Venda {
     public void setPreco(Double preco) { this.preco = preco; }
     public void setQuantidade(Integer quantidade) { this.quantidade = quantidade; }
     public void setTotal(Double total) { this.total = total; }
-    public void setData(Date data) { this.data = data; }
+    public void setData(LocalDate data) { this.data = data; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public void setMotivoCancelamento(String motivoCancelamento) { this.motivoCancelamento = motivoCancelamento; }
 

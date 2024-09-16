@@ -278,8 +278,22 @@ public class OpenModalController {
             }
         });
 
-        TableColumn<Venda, String> dateColumn = new TableColumn<>("Data");
+        TableColumn<Venda, LocalDate> dateColumn = new TableColumn<>("Data");
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("data"));
+        dateColumn.setCellFactory(column -> new TableCell<Venda, LocalDate>() {
+            private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("pt", "BR"));
+            @Override
+            protected void updateItem(LocalDate item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(dateFormat.format(item));
+                }
+            }
+        });
+
+
 
         TableColumn<Venda, String> paymentMethodColumn = new TableColumn<>("Forma de Pagamento");
         paymentMethodColumn.setCellValueFactory(new PropertyValueFactory<>("paymentMethod"));
@@ -536,19 +550,21 @@ public class OpenModalController {
                 }
             }
         });
-        TableColumn<Venda, Date> dateColumn = new TableColumn<>("Data");
+
+        TableColumn<Venda, LocalDate> dateColumn = new TableColumn<>("Data");
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("data"));
-        // Estilizar as células para exibir em vermelho se a venda estiver cancelada
-        dateColumn.setCellFactory(column -> new TableCell<Venda, Date>() {
+        dateColumn.setCellFactory(column -> new TableCell<Venda, LocalDate>() {
+            private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("pt", "BR"));
+
             @Override
-            protected void updateItem(Date item, boolean empty) {
+            protected void updateItem(LocalDate item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                     setStyle("");
                 } else {
-                    setText(String.valueOf(item));
-                    setStyle("-fx-text-fill: red;"); // Estilo para células com motivo
+                    setText(dateFormat.format(item));
+                    setStyle("-fx-text-fill: red;"); // Estilo para células, ajuste conforme necessário
                 }
             }
         });

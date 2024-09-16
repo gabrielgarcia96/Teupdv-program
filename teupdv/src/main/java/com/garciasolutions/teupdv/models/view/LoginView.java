@@ -87,6 +87,7 @@ public class LoginView extends Application {
         scene.getStylesheets().add(getClass().getResource("/loginstyle.css").toExternalForm());
 
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.setTitle("Login");
         stage.show();
     }

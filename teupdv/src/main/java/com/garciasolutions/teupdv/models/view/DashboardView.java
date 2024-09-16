@@ -5,6 +5,8 @@ import com.garciasolutions.teupdv.models.data.DatabaseProduct;
 import com.garciasolutions.teupdv.models.entities.*;
 import javafx.application.Application;
 import javafx.collections.ObservableSet;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.print.*;
 import javafx.print.Paper;
@@ -29,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -46,6 +49,8 @@ public class DashboardView extends Application {
     private Map<String, SelectedProduct> selectedProducts = new HashMap<>();
     private static final String VERSION_FILE_PATH = "C:/teupdv_data/version.properties";
     private PrintManager printManager;
+    private Button removeButton;
+    private Button payButton;
 
     public DashboardView(AcessLevel accessLevel) {
         this.accessLevel = accessLevel;
@@ -119,13 +124,14 @@ public class DashboardView extends Application {
 
         salesListView = new ListView<>();
         salesListView.setStyle("-fx-border-color: #ccc; -fx-border-radius: 5;");
-        Button removeButton = new Button("Remover");
-
+        removeButton = new Button("Remover");
+        removeButton.setDisable(true);
         removeButton.setOnAction(e -> removeSelectedProduct());
 
         totalLabel = new Label("Total: R$0.00");
 
-        Button payButton = new Button("Pagar");
+        payButton = new Button("Pagar");
+        payButton.setDisable(true);
         payButton.setOnAction(e -> openPaymentModal());
 
 
@@ -406,16 +412,29 @@ public class DashboardView extends Application {
         Button debitCardButton = new Button("Cartão de Débito");
         Button pixButton = new Button("Pix");
 
-        cashButton.setOnAction(e -> processPayment("Dinheiro"));
-        creditCardButton.setOnAction(e -> processPayment("Cartão de Crédito"));
-        debitCardButton.setOnAction(e -> processPayment("Cartão de Débito"));
-        pixButton.setOnAction(e -> processPayment("Pix"));
+        // Metodo auxiliar para processar o pagamento e fechar o modal
+        EventHandler<ActionEvent> handlePayment = event -> {
+            Button sourceButton = (Button) event.getSource();
+            String paymentMethod = sourceButton.getText();
+
+            // Processa o pagamento
+            processPayment(paymentMethod);
+
+            // Fecha o modal
+            paymentStage.close();
+        };
+
+        cashButton.setOnAction(handlePayment);
+        creditCardButton.setOnAction(handlePayment);
+        debitCardButton.setOnAction(handlePayment);
+        pixButton.setOnAction(handlePayment);
 
         vbox.getChildren().addAll(paymentLabel, cashButton, creditCardButton, debitCardButton, pixButton);
         paymentStage.setScene(new Scene(vbox, 300, 200));
         paymentStage.setTitle("Forma de Pagamento");
         paymentStage.show();
     }
+
 
     private boolean isFiscalDataRegistered() {
         String[] fiscalData = databaseProduct.getFiscalData();
@@ -438,7 +457,7 @@ public class DashboardView extends Application {
             return;
         }
 
-        Date today = new Date(System.currentTimeMillis()); // Data atual
+        LocalDate today = new Date(System.currentTimeMillis()).toLocalDate(); // Data atual
 
             // Adiciona o registro da venda ao banco de dados
             for (SelectedProduct product : selectedProducts.values()) {
@@ -479,7 +498,7 @@ public class DashboardView extends Application {
         Button noButton = new Button("Não");
 
         yesButton.setOnAction(e -> {
-            printReceipt(paymentMethod); // Passe o método de pagamento aqui
+            printReceipt(paymentMethod); // Passe o metodo de pagamento aqui
             printStage.close();
         });
 
@@ -726,7 +745,6 @@ public class DashboardView extends Application {
             return;
         }
 
-        // Considera que a lista pode ter vários produtos, então selecionamos o primeiro
         String[] parts = productInfo.split(" - ");
         if (parts.length != 2) {
             showAlert(Alert.AlertType.ERROR, "Erro de Formato", "Formato de produto retornado é inválido.");
@@ -735,11 +753,8 @@ public class DashboardView extends Application {
 
         String productCode = parts[0].trim();
         String productName = parts[1].trim();
-
-        // Assume-se que o preço do produto é obtido do banco de dados
         double productPrice = databaseProduct.getProductPrice(productCode);
 
-        // Cria ou atualiza o objeto SelectedProduct na lista
         SelectedProduct selectedProduct = selectedProducts.get(productCode);
         if (selectedProduct != null) {
             selectedProduct.incrementQuantity();
@@ -748,9 +763,9 @@ public class DashboardView extends Application {
             selectedProducts.put(productCode, selectedProduct);
         }
 
-        // Atualiza a interface de vendas
         updateSalesListView();
         updateTotalAmount();
+        updateButtonStates();
     }
 
 
@@ -841,29 +856,31 @@ public class DashboardView extends Application {
         // Atualiza a interface de vendas
         updateSalesListView();
         updateTotalAmount();
+        updateButtonStates();
     }
 
 
 
+
+
     private void removeSelectedProduct() {
-        // Obtenha o item selecionado na salesListView
         String selectedItem = salesListView.getSelectionModel().getSelectedItem();
 
         if (selectedItem != null) {
-            // Extraia o código do produto da string selecionada
             String[] parts = selectedItem.split(" - ");
-            String code = parts[0];
+            if (parts.length != 2) {
+                showAlert(Alert.AlertType.ERROR, "Erro de Formato", "Formato de produto inválido.");
+                return;
+            }
 
-            // Encontre o produto correspondente na lista de produtos selecionados
+            String code = parts[0];
             SelectedProduct selectedProduct = selectedProducts.get(code);
 
             if (selectedProduct != null) {
-                // Remova o produto da lista de produtos selecionados
                 selectedProducts.remove(code);
-
-                // Atualize a salesListView e o total
                 updateSalesListView();
                 updateTotalAmount();
+                updateButtonStates();
             } else {
                 showAlert(Alert.AlertType.WARNING, "Produto não encontrado", "O produto selecionado não pôde ser encontrado.");
             }
@@ -873,15 +890,11 @@ public class DashboardView extends Application {
     }
 
 
-
-    private void updateSalesList() {
-        salesListView.getItems().clear();
-        for (SelectedProduct product : selectedProducts.values()) {
-            salesListView.getItems().add(product.toString());
-        }
+    private void updateButtonStates() {
+        boolean hasProducts = !selectedProducts.isEmpty();
+        removeButton.setDisable(!hasProducts);
+        payButton.setDisable(!hasProducts);
     }
-
-
 
     private int getTotalItems() {
         return selectedProducts.size(); // Contar o número de produtos distintos

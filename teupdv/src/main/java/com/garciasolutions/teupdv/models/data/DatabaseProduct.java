@@ -255,7 +255,7 @@ public class DatabaseProduct {
                 double price = rs.getDouble("preco");
                 int quantity = rs.getInt("quantidade");
                 double total = rs.getDouble("total");
-                Date date = rs.getDate("data");
+                LocalDate date = rs.getDate("data").toLocalDate();
                 String paymentMethod = rs.getString("payment_method");
 
                 Venda venda = new Venda(
@@ -302,7 +302,7 @@ public class DatabaseProduct {
                 double price = rs.getDouble("preco");
                 int quantity = rs.getInt("quantidade");
                 double total = rs.getDouble("total");
-                Date date = rs.getDate("data");
+                LocalDate date = rs.getDate("data").toLocalDate();
                 String paymentMethod = rs.getString("payment_method");
                 String motivoCancelamento = rs.getString("motivo_cancelamento");
 
