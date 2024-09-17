@@ -89,6 +89,14 @@
             <version>5.5.13</version>
         </dependency>
 
+        <!-- swing -->
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>22.0.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -111,8 +119,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.garciasolutions.teupdv/com.garciasolutions.teupdv.HelloApplication
-                            </mainClass>
+                            <mainClass>com.garciasolutions.teupdv.models.view.Main</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
