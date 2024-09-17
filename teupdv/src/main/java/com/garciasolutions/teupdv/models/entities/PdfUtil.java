@@ -10,12 +10,12 @@ import java.io.InputStream;
 
 public class PdfUtil {
 
-    public static Image convertPdfPageToImage(InputStream pdfStream, int pageIndex, int resolution) throws IOException {
-        PDDocument document = PDDocument.load(pdfStream);
-        PDFRenderer pdfRenderer = new PDFRenderer(document);
-        BufferedImage bufferedImage = pdfRenderer.renderImageWithDPI(pageIndex, resolution);
-        document.close();
-        return SwingFXUtils.toFXImage(bufferedImage, null);
+    public static Image convertPdfPageToImage(InputStream pdfStream, int pageIndex, float resolution) throws IOException {
+        // Usando try-with-resources para garantir que o PDDocument seja fechado corretamente
+        try (PDDocument document = PDDocument.load(pdfStream)) {
+            PDFRenderer pdfRenderer = new PDFRenderer(document);
+            BufferedImage bufferedImage = pdfRenderer.renderImageWithDPI(pageIndex, resolution);
+            return SwingFXUtils.toFXImage(bufferedImage, null);
+        }
     }
-
 }
