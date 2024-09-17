@@ -4,12 +4,9 @@ import javafx.embed.swing.SwingFXUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
-import javafx.scene.image.PixelWriter;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.swing.*;
 
 public class PdfUtil {
 

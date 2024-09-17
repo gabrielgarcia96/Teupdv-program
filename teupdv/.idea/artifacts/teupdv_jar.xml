@@ -19,6 +19,13 @@
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/openjfx/javafx-fxml/22.0.1/javafx-fxml-22.0.1-win.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/openjfx/javafx-graphics/22.0.1/javafx-graphics-22.0.1-win.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/xerial/sqlite-jdbc/3.36.0.3/sqlite-jdbc-3.36.0.3.jar" path-in-jar="/" />
+      <element id="library" level="project" name="Maven: com.itextpdf:itextpdf:5.5.13" />
+      <element id="library" level="project" name="Maven: org.apache.pdfbox:fontbox:2.0.28" />
+      <element id="library" level="project" name="Maven: org.apache.pdfbox:pdfbox-debugger:2.0.28" />
+      <element id="library" level="project" name="Maven: org.apache.pdfbox:pdfbox-tools:2.0.28" />
+      <element id="library" level="project" name="Maven: org.apache.pdfbox:pdfbox:2.0.28" />
+      <element id="library" level="project" name="Maven: org.openjfx:javafx-swing:22.0.1" />
+      <element id="library" level="project" name="Maven: org.openjfx:javafx-swing:win:22.0.1" />
     </root>
   </artifact>
 </component>
