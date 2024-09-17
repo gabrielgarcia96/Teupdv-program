@@ -4,22 +4,28 @@ import com.garciasolutions.teupdv.models.data.DatabaseConnect;
 import com.garciasolutions.teupdv.models.data.DatabaseProduct;
 import com.garciasolutions.teupdv.models.data.DatabaseUser;
 import com.garciasolutions.teupdv.models.entities.AcessLevel;
+import com.garciasolutions.teupdv.models.entities.PdfUtil;
 import com.garciasolutions.teupdv.models.entities.Venda;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -30,11 +36,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Paragraph;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-
-
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 public class OpenModalController {
 
     private DatabaseProduct databaseProduct;
@@ -293,8 +305,6 @@ public class OpenModalController {
             }
         });
 
-
-
         TableColumn<Venda, String> paymentMethodColumn = new TableColumn<>("Forma de Pagamento");
         paymentMethodColumn.setCellValueFactory(new PropertyValueFactory<>("paymentMethod"));
 
@@ -316,13 +326,9 @@ public class OpenModalController {
             }
         });
 
-        // Botão de Baixar PDF
-        Button downloadPdfButton = new Button("Baixar PDF");
-        downloadPdfButton.setPadding(new Insets(10, 10, 10, 10));
-        downloadPdfButton.setOnAction(e -> {
-            double totalSales = calculateTotalSales(tableView); // Calcular o total das vendas
-            generatePdfReport(tableView, startDate, endDate, totalSales);
-        });
+        // Botão de Visualizar PDF
+        Button viewPdfButton = createViewPdfButton(tableView, startDate, endDate); // Usa o método para criar o botão
+        VBox.setMargin(viewPdfButton, new Insets(10, 10, 10, 10)); // Adiciona margem ao botão
 
         // Adicionar EventHandlers aos MenuItems
         cashItem.setOnAction(e -> updateTableAndTotal(startDate, endDate, tableView, totalLabel, "Dinheiro"));
@@ -333,7 +339,7 @@ public class OpenModalController {
 
         VBox vboxContainer = new VBox(10);
         vboxContainer.setAlignment(Pos.CENTER);
-        vboxContainer.getChildren().addAll(tableView, totalLabel, downloadPdfButton);
+        vboxContainer.getChildren().addAll(tableView, totalLabel, viewPdfButton); // Adiciona o botão de visualizar PDF ao VBox
         VBox.setMargin(cancelButton, new Insets(10, 10, 10, 10));
 
         BorderPane bottomPane = new BorderPane();
@@ -354,6 +360,126 @@ public class OpenModalController {
         reportDisplayStage.show();
     }
 
+    private Button createViewPdfButton(TableView<Venda> tableView, LocalDate startDate, LocalDate endDate) {
+        Button viewPdfButton = new Button("Visualizar PDF");
+        viewPdfButton.setPadding(new Insets(10));
+        viewPdfButton.setOnAction(e -> {
+            ByteArrayOutputStream pdfStream = generatePdfReportAsStream(tableView, startDate, endDate, calculateTotalSales(tableView));
+            try {
+                InputStream inputStream = new ByteArrayInputStream(pdfStream.toByteArray());
+                Image pdfImage = PdfUtil.convertPdfPageToImage(inputStream, 0, 300); // Página 0 (primeira página), resolução 300 DPI
+
+                // Exibir a imagem em um modal
+                Stage modalStage = new Stage();
+                modalStage.initModality(Modality.APPLICATION_MODAL);
+                modalStage.setTitle("Visualizar PDF");
+
+                ImageView imageView = new ImageView(pdfImage);
+                imageView.setPreserveRatio(true); // Preserve aspect ratio
+                imageView.setSmooth(true); // Enable smoothing for better image quality
+                imageView.setCache(true); // Cache the image for better performance
+                imageView.setFitWidth(2000); // Ajuste para melhorar a qualidade
+                imageView.setFitHeight(1200); // Ajuste para melhorar a qualidade
+
+                // Menu de opções
+                MenuButton menuButton = new MenuButton("Salvar");
+                MenuItem saveAsPdfItem = new MenuItem("Salvar como PDF");
+                saveAsPdfItem.setOnAction(ev -> {
+                    FileChooser fileChooser = new FileChooser();
+                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+                    File file = fileChooser.showSaveDialog(modalStage);
+                    if (file != null) {
+                        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+                            fileOutputStream.write(pdfStream.toByteArray());
+                        } catch (IOException ioException) {
+                            ioException.printStackTrace();
+                        }
+                    }
+                });
+                menuButton.getItems().add(saveAsPdfItem);
+
+                // Layout do modal
+                HBox topBar = new HBox(10);
+                topBar.setAlignment(Pos.CENTER_LEFT);
+                topBar.getChildren().add(menuButton);
+
+                VBox vboxContainer = new VBox();
+                vboxContainer.getChildren().addAll(topBar, new Separator(), new ScrollPane(imageView));
+                VBox.setVgrow(vboxContainer.getChildren().get(2), Priority.ALWAYS); // Faz a ScrollPane ocupar o espaço restante
+
+                Scene scene = new Scene(vboxContainer, 800, 800); // Ajuste o tamanho da cena
+                modalStage.setScene(scene);
+                modalStage.show();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
+        return viewPdfButton;
+    }
+
+
+    public ByteArrayOutputStream generatePdfReportAsStream(TableView<Venda> tableView, LocalDate startDate, LocalDate endDate, double totalSales) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4); // Use A3 para uma qualidade maior
+        try {
+            PdfWriter.getInstance(document, outputStream);
+            document.open();
+
+            // Fontes
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
+            Font textFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+
+            // Título com intervalo de datas
+            document.add(new Paragraph("Relatório de Vendas", titleFont));
+            document.add(new Paragraph(String.format("Período: %s a %s", startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))), textFont));
+
+            // Adiciona espaçamento antes do total das vendas
+            document.add(new Paragraph(" ")); // Adiciona uma linha em branco para espaçamento
+
+            // Total de vendas
+            document.add(new Paragraph(String.format("Total das Vendas: R$ %.2f", totalSales), textFont));
+
+            // Adiciona espaçamento adicional antes da tabela
+            document.add(new Paragraph(" ")); // Adiciona uma linha em branco para espaçamento
+
+            // Cabeçalho da Tabela
+            PdfPTable table = new PdfPTable(7); // Número de colunas
+            table.setWidths(new float[]{2f, 2f, 2f, 2f, 2f, 2f, 3f}); // Definindo a largura das colunas
+
+            // Define o estilo das células (borda)
+            PdfPCell headerCell = createCell("Código", textFont);
+            headerCell.setBorderWidth(1f); // Define a largura da borda
+            headerCell.setBorderColor(BaseColor.BLACK); // Define a cor da borda
+            table.addCell(headerCell);
+
+            // Adiciona as outras células do cabeçalho com o mesmo estilo
+            table.addCell(createCell("Nome", textFont));
+            table.addCell(createCell("Preço", textFont));
+            table.addCell(createCell("Quantidade", textFont));
+            table.addCell(createCell("Total", textFont));
+            table.addCell(createCell("Data", textFont));
+            table.addCell(createCell("Forma de Pagamento", textFont));
+
+            // Adiciona as linhas da TableView
+            for (Venda venda : tableView.getItems()) {
+                table.addCell(createCell(venda.getCodigoProduto() != null ? venda.getCodigoProduto() : "", textFont));
+                table.addCell(createCell(venda.getNomeProduto() != null ? venda.getNomeProduto() : "", textFont));
+                table.addCell(createCell(venda.getPreco() != null ? String.format("R$ %.2f", venda.getPreco()) : "R$ 0,00", textFont));
+                table.addCell(createCell(venda.getQuantidade() != null ? String.valueOf(venda.getQuantidade()) : "0", textFont));
+                table.addCell(createCell(venda.getTotal() != null ? String.format("R$ %.2f", venda.getTotal()) : "R$ 0,00", textFont));
+                table.addCell(createCell(venda.getData() != null ? venda.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "N/A", textFont));
+                table.addCell(createCell(venda.getPaymentMethod() != null ? venda.getPaymentMethod() : "N/A", textFont));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+        return outputStream;
+    }
+
+
     private double calculateTotalSales(TableView<Venda> tableView) {
         double total = 0.0;
         for (Venda venda : tableView.getItems()) {
@@ -364,72 +490,13 @@ public class OpenModalController {
         return total;
     }
 
-    private void generatePdfReport(TableView<Venda> tableView, LocalDate startDate, LocalDate endDate, double totalSales) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new ExtensionFilter("PDF Files", "*.pdf"));
-        File file = fileChooser.showSaveDialog(null);
-        if (file != null) {
-            try {
-                Document document = new Document(PageSize.A4);
-                PdfWriter.getInstance(document, new FileOutputStream(file));
-                document.open();
-
-                // Fontes
-                Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
-                Font textFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
-
-                // Título com intervalo de datas
-                document.add(new Paragraph("Relatório de Vendas", titleFont));
-                document.add(new Paragraph(String.format("Período: %s a %s", startDate.format(formatter), endDate.format(formatter)), textFont));
-
-                // Adiciona espaçamento antes do total das vendas
-                document.add(new Paragraph(" ")); // Adiciona uma linha em branco para espaçamento
-
-                // Total de vendas
-                document.add(new Paragraph(String.format("Total das Vendas: R$ %.2f", totalSales), textFont));
-
-                // Adiciona espaçamento adicional antes da tabela
-                document.add(new Paragraph(" ")); // Adiciona uma linha em branco para espaçamento
-
-                // Cabeçalho da Tabela
-                PdfPTable table = new PdfPTable(7); // Número de colunas
-                table.setWidths(new float[]{1f, 2f, 2f, 1.5f, 2f, 2f, 2f}); // Definindo a largura das colunas
-
-                table.addCell(createCell("Código", textFont));
-                table.addCell(createCell("Nome", textFont));
-                table.addCell(createCell("Preço", textFont));
-                table.addCell(createCell("Quantidade", textFont));
-                table.addCell(createCell("Total", textFont));
-                table.addCell(createCell("Data", textFont));
-                table.addCell(createCell("Forma de Pagamento", textFont));
-
-                // Adiciona as linhas da TableView
-                for (Venda venda : tableView.getItems()) {
-                    table.addCell(createCell(venda.getCodigoProduto() != null ? venda.getCodigoProduto() : "", textFont));
-                    table.addCell(createCell(venda.getNomeProduto() != null ? venda.getNomeProduto() : "", textFont));
-                    table.addCell(createCell(venda.getPreco() != null ? String.format("R$ %.2f", venda.getPreco()) : "R$ 0,00", textFont));
-                    table.addCell(createCell(venda.getQuantidade() != null ? String.valueOf(venda.getQuantidade()) : "0", textFont));
-                    table.addCell(createCell(venda.getTotal() != null ? String.format("R$ %.2f", venda.getTotal()) : "R$ 0,00", textFont));
-                    table.addCell(createCell(venda.getData() != null ? venda.getData().toString() : "N/A", textFont));
-                    table.addCell(createCell(venda.getPaymentMethod() != null ? venda.getPaymentMethod() : "N/A", textFont));
-                }
-
-                document.add(table);
-                document.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
 
     private PdfPCell createCell(String text, Font font) {
-        PdfPCell cell = new PdfPCell(new Paragraph(text, font));
-        cell.setPadding(5); // Adiciona padding interno para cada célula
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setBorderWidth(0.5f); // Define a largura da borda
+        cell.setBorderColor(BaseColor.BLACK); // Define a cor da borda
         return cell;
     }
-
 
 
     private void updateTableAndTotal(LocalDate startDate, LocalDate endDate, TableView<Venda> tableView, Label totalLabel, String paymentMethodFilter) {
