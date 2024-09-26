@@ -1,22 +1,25 @@
 package com.garciasolutions.teupdv.models.entities;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SelectedProduct {
     private String code;
     private String name;
-    private double price;
+    private double basePrice; // Preço base do produto
     private int quantity;
     private int id; // Adicionando o ID
     private String motivoCancelamento;
-  //  private String formaPagamento;
+    private List<SubProduct> subProducts; // Lista para armazenar subprodutos
 
-    public SelectedProduct(int id, String code, String name, double price, int quantity, String motivoCancelamento) {
-        this.motivoCancelamento = motivoCancelamento;
+    public SelectedProduct(int id, String code, String name, double basePrice, int quantity, String motivoCancelamento) {
         this.id = id;
         this.code = code;
         this.name = name;
-        this.price = price;
+        this.basePrice = basePrice;
         this.quantity = quantity;
-       // this.formaPagamento = formaPagamento;
+        this.motivoCancelamento = motivoCancelamento;
+        this.subProducts = new ArrayList<>(); // Inicializa a lista de subprodutos
     }
 
     public int getId() {
@@ -27,9 +30,13 @@ public class SelectedProduct {
         this.id = id;
     }
 
-    public String getMotivoCancelamento() { return motivoCancelamento; }
+    public String getMotivoCancelamento() {
+        return motivoCancelamento;
+    }
 
-    public void setMotivoCancelamento(String motivoCancelamento) { this.motivoCancelamento = motivoCancelamento; }
+    public void setMotivoCancelamento(String motivoCancelamento) {
+        this.motivoCancelamento = motivoCancelamento;
+    }
 
     public String getCode() {
         return code;
@@ -39,8 +46,8 @@ public class SelectedProduct {
         return name;
     }
 
-    public double getPrice() {
-        return price;
+    public double getBasePrice() {
+        return basePrice;
     }
 
     public int getQuantity() {
@@ -55,10 +62,25 @@ public class SelectedProduct {
         this.quantity = quantity;
     }
 
-    public double getTotalPrice() {
-        return price * quantity;
+    // Adiciona um subproduto à lista
+    public void addSubProduct(String subProductName, double subProductPrice) {
+        SubProduct subProduct = new SubProduct(subProductName, subProductPrice);
+        subProducts.add(subProduct);
     }
 
+    // Retorna a lista de subprodutos
+    public List<SubProduct> getSubProducts() {
+        return subProducts;
+    }
+
+    // Calcula o preço total, incluindo os subprodutos
+    public double getTotalPrice() {
+        double total = basePrice * quantity; // Preço do produto principal
+        for (SubProduct sub : subProducts) {
+            total += sub.getPrice(); // Soma o preço dos subprodutos
+        }
+        return total;
+    }
 
     @Override
     public String toString() {

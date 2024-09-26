@@ -1,6 +1,7 @@
 package com.garciasolutions.teupdv.models.data;
 
 
+import com.garciasolutions.teupdv.models.entities.SubProduct;
 import com.garciasolutions.teupdv.models.entities.Venda;
 
 import static com.garciasolutions.teupdv.models.data.DatabaseConnect.connect;
@@ -14,8 +15,17 @@ import java.util.List;
 
 
 public class DatabaseProduct {
-    public void insertProductIntoDatabase(String code, String nameproduct, String priceproduct, String groupproduct) {
-        String sql = "INSERT INTO products (code, nameproduct, priceproduct, groupproduct) VALUES (?, ?, ?, ?)";
+
+    // Constructor
+    public DatabaseProduct() {
+        verificarCriarTabelaSubProdutos();
+    }
+
+
+    public void insertProductIntoDatabase(String code, String nameproduct, String priceproduct, String groupproduct, boolean hasSubProducts) {
+        ensureColumnExists();
+
+        String sql = "INSERT INTO products (code, nameproduct, priceproduct, groupproduct, has_sub_products) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -23,6 +33,7 @@ public class DatabaseProduct {
             pstmt.setString(2, nameproduct);
             pstmt.setDouble(3, Double.parseDouble(priceproduct)); // Converta o preço para double
             pstmt.setString(4, groupproduct);
+            pstmt.setBoolean(5, hasSubProducts); // Adiciona o valor do checkbox
 
             pstmt.executeUpdate();
             System.out.println("Produto cadastrado com sucesso!");
@@ -33,9 +44,35 @@ public class DatabaseProduct {
     }
 
 
+    public void insertSubProductIntoDatabase(String code, String nameproduct, String priceproduct) {
+        // Substitui a vírgula por um ponto
+        priceproduct = priceproduct.replace(',', '.');
+
+        String sql = "INSERT INTO subproducts (code, nameproduct, priceproduct) VALUES (?, ?, ?)";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, code);
+            pstmt.setString(2, nameproduct);
+            pstmt.setDouble(3, Double.parseDouble(priceproduct)); // Converte para double
+
+            pstmt.executeUpdate();
+            System.out.println("Subproduto inserido com sucesso!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao inserir subproduto.");
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao converter preço para double.");
+        }
+    }
+
+
+
+
     public List<String> getAllProducts() {
         List<String> products = new ArrayList<>();
-        String sql = "SELECT code, nameproduct FROM products";
+        String sql = "SELECT code, nameproduct, priceproduct FROM products"; // Incluindo priceproduct
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
@@ -43,13 +80,15 @@ public class DatabaseProduct {
             while (rs.next()) {
                 String code = rs.getString("code");
                 String name = rs.getString("nameproduct");
-                products.add(code + " - " + name);
+                double price = rs.getDouble("priceproduct");
+                products.add(code + " - " + name + " - " + price); // Formato de exibição
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return products;
     }
+
 
     public List<String> searchProducts(String searchText) {
         List<String> products = new ArrayList<>();
@@ -366,7 +405,220 @@ public class DatabaseProduct {
         // Retorna um array com valores nulos se não houver dados
         return new String[] { "", "", "", "", "" };
     }
+    //
 
+    public void verificarCriarTabelaSubProdutos() {
+        String sql = "CREATE TABLE IF NOT EXISTS subproducts (" +
+                "code TEXT PRIMARY KEY, " +
+                "nameproduct TEXT NOT NULL, " +
+                "priceproduct REAL NOT NULL);";
+
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("Tabela subproducts verificada/criada com sucesso.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao verificar/criar tabela subproducts.");
+        }
+    }
+
+
+
+    //
+
+    public boolean verificarCodigoProdutoExistente(String codigo) {
+        String sql = "SELECT COUNT(*) FROM products WHERE code = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, codigo);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // Retorna true se a contagem for maior que 0
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public List<String> obterTodosOsSubProdutos() {
+        List<String> subProdutos = new ArrayList<>();
+        String sql = "SELECT code, nameproduct, priceproduct FROM subproducts";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                String code = rs.getString("code");
+                String name = rs.getString("nameproduct");
+                String price = rs.getString("priceproduct"); // Manter como string
+                subProdutos.add(code + " - " + name + " - " + price);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return subProdutos;
+    }
+
+    public String getSubProductName(String code) {
+        String sql = "SELECT nameproduct FROM subproducts WHERE code = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, code);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("nameproduct");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+
+    public String getSubProductPrice(String code) {
+        String sql = "SELECT priceproduct FROM subproducts WHERE code = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, code);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("priceproduct"); // Retorna como String
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public List<SubProduct> getSubProducts() {
+        List<SubProduct> subProducts = new ArrayList<>();
+        String sql = "SELECT nameproduct, priceproduct FROM subproducts"; // Corrigido
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                String name = rs.getString("nameproduct"); // Correto
+                double price = rs.getDouble("priceproduct"); // Correto
+                subProducts.add(new SubProduct(name, price));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao buscar subprodutos.");
+        }
+
+        return subProducts;
+    }
+
+
+
+
+    public void deleteSubProductFromDatabase(String code) {
+        String sql = "DELETE FROM subproducts WHERE code = ?";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, code);
+            pstmt.executeUpdate();
+            System.out.println("Subproduto excluído com sucesso!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao excluir subproduto.");
+        }
+    }
+
+    public void updateSubProductInDatabase(String code, String nameproduct, String priceproduct) {
+        // Substitui a vírgula por um ponto
+        priceproduct = priceproduct.replace(',', '.');
+
+        String sql = "UPDATE subproducts SET nameproduct = ?, priceproduct = ? WHERE code = ?";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nameproduct);
+            pstmt.setDouble(2, Double.parseDouble(priceproduct)); // Converte para double
+            pstmt.setString(3, code);
+
+            pstmt.executeUpdate();
+            System.out.println("Subproduto atualizado com sucesso!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao atualizar subproduto.");
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao converter preço para double.");
+        }
+    }
+
+
+    public boolean checkIfProductHasSubProducts(String productCode) {
+        String sql = "SELECT has_sub_products FROM products WHERE code = ?";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, productCode);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getBoolean("has_sub_products");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao verificar subprodutos para o código: " + productCode);
+        }
+
+        return false; // Retorna false se não encontrar o produto
+    }
+
+    public void ensureColumnExists() {
+        String sqlCheck = "PRAGMA table_info(products)";
+        String sqlAddColumn = "ALTER TABLE products ADD COLUMN has_sub_products BOOLEAN DEFAULT 0";
+
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sqlCheck)) {
+
+            boolean columnExists = false;
+            while (rs.next()) {
+                String columnName = rs.getString("name");
+                if ("has_sub_products".equals(columnName)) {
+                    columnExists = true;
+                    break;
+                }
+            }
+
+            if (!columnExists) {
+                stmt.execute(sqlAddColumn);
+                System.out.println("Coluna 'has_sub_products' criada com sucesso!");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao verificar ou criar a coluna.");
+        }
+    }
+
+    public boolean hasSubProducts(String productCode) {
+        String sql = "SELECT has_sub_products FROM products WHERE code = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, productCode);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getBoolean("has_sub_products");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Erro ao verificar se o produto tem subprodutos.");
+        }
+        return false; // Retorna false se o produto não for encontrado
+    }
 
 
 }

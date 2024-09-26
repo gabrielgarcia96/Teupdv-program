@@ -4,9 +4,9 @@ import com.garciasolutions.teupdv.models.controller.OpenModalController;
 import com.garciasolutions.teupdv.models.data.DatabaseProduct;
 import com.garciasolutions.teupdv.models.entities.*;
 import javafx.application.Application;
-import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.print.*;
 import javafx.print.Paper;
@@ -23,6 +23,7 @@ import javafx.scene.text.Text;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -31,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Date;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -73,6 +75,8 @@ public class DashboardView extends Application {
         Menu menuProducts = new Menu("Produtos");
         MenuItem listProducts = new MenuItem("Lista de Produtos");
         MenuItem cadProducts = new MenuItem("Cadastrar Produtos");
+        MenuItem subProducts = new MenuItem("Cadastrar SubProdutos");
+        MenuItem listSubProducts = new MenuItem("Lista SubProdutos");
         Menu menuReports = new Menu("Relatórios");
         MenuItem generateReport = new MenuItem("Gerar Relatório");
         MenuItem generateCancelationReport = new MenuItem("Gerar Relatório de Cancelamentos");
@@ -83,7 +87,7 @@ public class DashboardView extends Application {
         MenuItem updateItem = new MenuItem("Atualizar Software");
 
 
-        menuProducts.getItems().setAll(cadProducts, listProducts);
+        menuProducts.getItems().setAll(cadProducts, subProducts, listProducts, listSubProducts);
         menuSettings.getItems().addAll(cadFiscal, registerUserItem, impScanner ,updateItem);
         menuReports.getItems().setAll(generateReport, generateCancelationReport);
 
@@ -230,6 +234,10 @@ public class DashboardView extends Application {
             }
         });
 
+        // Subprodutos
+        subProducts.setOnAction(e -> mostrarModalCadastrarSubProduto());
+        listSubProducts.setOnAction(e -> mostrarListaSubProdutosModal());
+
         // Actions for Menu Items
         cadProducts.setOnAction(event -> {
             if (cadStage != null && cadStage.isShowing()) {
@@ -258,11 +266,15 @@ public class DashboardView extends Application {
             Button addGroupButton = new Button("+");
             addGroupButton.setOnAction(e -> openAddGroupModal(groupComboBox));
 
+            CheckBox addSubProductsCheckbox = new CheckBox("Adicionar Subprodutos");
+
             HBox groupLayout = new HBox(10);
             groupLayout.getChildren().addAll(groupComboBox, addGroupButton);
 
             Button cadButton = new Button("Cadastrar");
             cadButton.setOnAction(e -> {
+
+                boolean hasSubProducts = addSubProductsCheckbox.isSelected();
                 String code = numberTextField.getText().trim();
                 String nameProduct = nameTextField.getText().trim();
                 String priceProduct = openModalController.normalizePrice(priceTextField.getText().trim()); // Normaliza o preço
@@ -290,7 +302,7 @@ public class DashboardView extends Application {
                     }
 
                     // Insere o produto no banco de dados
-                    databaseProduct.insertProductIntoDatabase(code, nameProduct, priceProduct, groupProduct);
+                    databaseProduct.insertProductIntoDatabase(code, nameProduct, priceProduct, groupProduct, hasSubProducts);
                     cadStage.close();
                     cadStage = null;
                 } catch (Exception ex) {
@@ -299,7 +311,7 @@ public class DashboardView extends Application {
                 }
             });
 
-            vbox.getChildren().addAll(numberLabel, numberTextField, nameLabel, nameTextField, priceLabel, priceTextField, groupLabel, groupLayout, cadButton);
+            vbox.getChildren().addAll(numberLabel, numberTextField, nameLabel, nameTextField, priceLabel, priceTextField, groupLabel, groupLayout,addSubProductsCheckbox, cadButton);
         });
 
         // impressora config teste!
@@ -312,6 +324,7 @@ public class DashboardView extends Application {
                 productListStage.toFront();
                 return;
             }
+
             productListStage = new Stage();
             VBox vbox = new VBox(10);
             ListView<String> listView = new ListView<>();
@@ -325,8 +338,23 @@ public class DashboardView extends Application {
             productListStage.setTitle("Lista de Produtos");
             productListStage.show();
 
+            // Obter todos os produtos
             List<String> products = databaseProduct.getAllProducts();
-            listView.getItems().addAll(products);
+            // Formatar os preços para usar vírgula e duas casas decimais
+            List<String> formattedProducts = new ArrayList<>();
+            DecimalFormat decimalFormat = new DecimalFormat("#0.00"); // Formato com duas casas decimais
+
+            for (String product : products) {
+                String[] parts = product.split(" - ");
+                String code = parts[0];
+                String name = parts[1];
+                String priceString = parts[2];
+                double price = Double.parseDouble(priceString.replace(',', '.')); // Converte a string para double
+                String formattedPrice = decimalFormat.format(price).replace('.', ','); // Formata e troca ponto por vírgula
+                formattedProducts.add(code + " - " + name + " - R$" + formattedPrice);
+            }
+
+            listView.getItems().addAll(formattedProducts);
 
             editButton.setOnAction(e -> {
                 String selectedProduct = listView.getSelectionModel().getSelectedItem();
@@ -355,12 +383,183 @@ public class DashboardView extends Application {
             });
         });
 
+
         generateReport.setOnAction(event -> openModalController.openReportModal());
         generateCancelationReport.setOnAction(e -> openModalController.openCancellationReportModal());
 
     }
 
+//
 
+
+    public void mostrarListaSubProdutosModal() {
+        if (productListStage != null && productListStage.isShowing()) {
+            productListStage.toFront();
+            return;
+        }
+
+        productListStage = new Stage();
+        VBox vbox = new VBox(10);
+        ListView<String> listView = new ListView<>();
+        Button editButton = new Button("Editar");
+        Button deleteButton = new Button("Excluir");
+
+        HBox buttonLayout = new HBox(10);
+        buttonLayout.getChildren().addAll(editButton, deleteButton);
+        vbox.getChildren().addAll(listView, buttonLayout);
+        productListStage.setScene(new Scene(vbox, 300, 400));
+        productListStage.setTitle("Lista de Sub Produtos");
+        productListStage.show();
+
+        // Obter todos os subprodutos
+        List<String> subProdutos = databaseProduct.obterTodosOsSubProdutos();
+        DecimalFormat decimalFormat = new DecimalFormat("0.00"); // Formatação para duas casas decimais
+        List<String> formattedSubProducts = new ArrayList<>();
+        for (String subProduto : subProdutos) {
+            String[] parts = subProduto.split(" - ");
+            String code = parts[0];
+            String name = parts[1];
+            // Formatar o preço e substituir o ponto por vírgula
+            String price = parts[2].replace('.', ','); // Primeiro, substitua o ponto por vírgula
+            // Adiciona o valor formatado
+            formattedSubProducts.add(code + " - " + name + " - R$" + decimalFormat.format(Double.parseDouble(price.replace(',', '.'))));
+        }
+        listView.getItems().addAll(formattedSubProducts);
+
+        editButton.setOnAction(e -> {
+            String selectedSubProduct = listView.getSelectionModel().getSelectedItem();
+            if (selectedSubProduct != null) {
+                openSubProductEditModal(selectedSubProduct, listView); // Passar listView para o modal de edição
+            }
+        });
+
+        deleteButton.setOnAction(e -> {
+            String selectedSubProduct = listView.getSelectionModel().getSelectedItem();
+            if (selectedSubProduct != null) {
+                String[] parts = selectedSubProduct.split(" - ");
+                String code = parts[0];
+                databaseProduct.deleteSubProductFromDatabase(code);
+                listView.getItems().remove(selectedSubProduct);
+            }
+        });
+
+        listView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                String selectedSubProduct = listView.getSelectionModel().getSelectedItem();
+                if (selectedSubProduct != null) {
+                    openSubProductEditModal(selectedSubProduct, listView); // Passar listView para o modal de edição
+                }
+            }
+        });
+    }
+
+
+
+    //
+    private void openSubProductEditModal(String selectedSubProduct, ListView<String> listView) {
+
+
+        Stage editStage = new Stage();
+        VBox vbox = new VBox(10);
+        editStage.setScene(new Scene(vbox, 300, 400));
+        editStage.setTitle("Editar Sub Produto");
+
+        String[] parts = selectedSubProduct.split(" - ");
+        String code = parts[0];
+        String name = databaseProduct.getSubProductName(code);
+        String price = databaseProduct.getSubProductPrice(code).replace('.', ',') ;// Aqui pegamos o preço como string
+
+        Label numberLabel = new Label("Código");
+        TextField numberTextField = new TextField(code);
+        numberTextField.setMaxWidth(40);
+        Label nameLabel = new Label("Nome Sub Produto");
+        TextField nameTextField = new TextField(name);
+        nameTextField.setMaxWidth(250);
+        Label priceLabel = new Label("Valor");
+        TextField priceTextField = new TextField(price); // Usar a string diretamente
+        priceTextField.setMaxWidth(60);
+
+        Button saveButton = new Button("Salvar");
+        saveButton.setOnAction(e -> {
+            String newCode = numberTextField.getText();
+            String newName = nameTextField.getText();
+            String newPrice = priceTextField.getText(); // Manter como string
+
+            // Aqui não precisamos converter, apenas salvar o novo preço
+            databaseProduct.updateSubProductInDatabase(newCode, newName, newPrice);
+
+            // Atualizar a lista
+            int selectedIndex = listView.getSelectionModel().getSelectedIndex();
+            listView.getItems().set(selectedIndex, newCode + " - " + newName + " - " + newPrice); // Atualiza na lista
+
+            editStage.close();
+        });
+
+        vbox.getChildren().addAll(numberLabel, numberTextField, nameLabel, nameTextField, priceLabel, priceTextField, saveButton);
+        editStage.show();
+    }
+
+
+
+
+    //
+
+    public void mostrarModalCadastrarSubProduto() {
+        DatabaseProduct databaseProduct = new DatabaseProduct();
+        Stage modal = new Stage();
+        modal.initModality(Modality.APPLICATION_MODAL);
+        modal.setTitle("Cadastrar Sub Produto");
+
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
+
+        Label campoCodigoLabel = new Label("Código:");
+        TextField campoCodigo = new TextField();
+        campoCodigo.setMaxWidth(40);
+
+        Label campoNomeLabel = new Label("Nome:");
+        TextField campoNome = new TextField();
+        campoNome.setMaxWidth(250);
+
+        Label campoPrecoLabel = new Label("Preço:");
+        TextField campoPreco = new TextField();
+        campoPreco.setMaxWidth(60);
+
+        Button botaoCadastrar = new Button("Cadastrar");
+
+        botaoCadastrar.setOnAction(e -> {
+            String codigo = campoCodigo.getText();
+            String nome = campoNome.getText();
+            String preco = campoPreco.getText();
+
+            if (databaseProduct.verificarCodigoProdutoExistente(codigo)) {
+                mostrarAlerta("Erro", "Código já cadastrado!");
+            } else {
+                // Salva o preço como string
+                databaseProduct.insertSubProductIntoDatabase(codigo, nome, preco);
+                modal.close(); // Fecha o modal após cadastro
+            }
+        });
+
+        vbox.getChildren().addAll(campoCodigoLabel, campoCodigo,
+                campoNomeLabel, campoNome,
+                campoPrecoLabel, campoPreco,
+                botaoCadastrar);
+
+        Scene scene = new Scene(vbox, 300, 250);
+        modal.setScene(scene);
+        modal.show();
+    }
+
+
+
+
+    private void mostrarAlerta(String titulo, String conteudo) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(titulo);
+        alert.setContentText(conteudo);
+        alert.showAndWait();
+    }
 
     ///
 
@@ -388,10 +587,13 @@ public class DashboardView extends Application {
     private void updateTotalAmount() {
         totalAmount = 0.0;
         for (SelectedProduct product : selectedProducts.values()) {
-            totalAmount += product.getTotalPrice();
+            totalAmount += product.getTotalPrice(); // Certifique-se de que getTotalPrice considera subprodutos
         }
+        // Atualize o label que exibe o total na interface
         totalLabel.setText(String.format("Total: R$%.2f", totalAmount));
     }
+
+
 
     ///
 
@@ -457,34 +659,35 @@ public class DashboardView extends Application {
             return;
         }
 
-        LocalDate today = new Date(System.currentTimeMillis()).toLocalDate(); // Data atual
+        LocalDate today = LocalDate.now(); // Data atual
 
-            // Adiciona o registro da venda ao banco de dados
-            for (SelectedProduct product : selectedProducts.values()) {
-                Venda venda = new Venda(
-                        product.getId(),
-                        product.getCode(),
-                        product.getName(),
-                        product.getPrice(),
-                        product.getPrice(),  // Assumindo que o valor e o preço são iguais
-                        product.getQuantity(),
-                        today,
-                        paymentMethod,
-                        product.getMotivoCancelamento()// Passa a data para a venda
-                );
-                venda.registrarVenda();
-            }
+        // Adiciona o registro da venda ao banco de dados
+        for (SelectedProduct product : selectedProducts.values()) {
+            Venda venda = new Venda(
+                    product.getId(),
+                    product.getCode(),
+                    product.getName(),
+                    product.getTotalPrice(), // Aqui usamos getTotalPrice
+                    product.getTotalPrice(),  // Assumindo que o valor e o preço são iguais
+                    product.getQuantity(),
+                    today,
+                    paymentMethod,
+                    product.getMotivoCancelamento() // Passa a data para a venda
+            );
+            venda.registrarVenda();
+        }
 
-            if (paymentMethod.equals("Dinheiro")) {
-                openCashPaymentModal();
-            } else {
-                double total = totalAmount;
-                System.out.println("Forma de pagamento: " + paymentMethod);
-                System.out.println("Total a pagar: R$" + String.format("%.2f", total));
-                 openPrintReceiptModal(paymentMethod);
-             //   printNFCE(paymentMethod); // Imprime o comprovante apos clicar no tipo de pagamento
-            }
+        if (paymentMethod.equals("Dinheiro")) {
+            openCashPaymentModal();
+        } else {
+            double total = totalAmount;
+            System.out.println("Forma de pagamento: " + paymentMethod);
+            System.out.println("Total a pagar: R$" + String.format("%.2f", total));
+            openPrintReceiptModal(paymentMethod);
+            // printNFCE(paymentMethod); // Imprime o comprovante após clicar no tipo de pagamento
+        }
     }
+
 
 
 
@@ -602,7 +805,7 @@ public class DashboardView extends Application {
         confirmButton.setOnAction(e -> {
             try {
                 amountGiven = Double.parseDouble(amountGivenTextField.getText());
-                double change = amountGiven - totalAmount;
+                double change = amountGiven - totalAmount; // Verifique se totalAmount está atualizado
 
                 if (change < 0) {
                     showAlert(Alert.AlertType.WARNING, "Valor Insuficiente", "O valor dado é menor que o total.");
@@ -612,6 +815,9 @@ public class DashboardView extends Application {
                 // Exibe informações do pagamento
                 System.out.println("Valor dado pelo cliente: R$" + String.format("%.2f", amountGiven));
                 System.out.println("Troco a devolver: R$" + String.format("%.2f", change));
+
+                // Atualize a interface para mostrar o troco
+                changeText.setText(String.format("R$%.2f", change));
 
                 openPrintReceiptModal("Dinheiro");
                 cashPaymentStage.close();
@@ -636,28 +842,29 @@ public class DashboardView extends Application {
         LocalDateTime now = LocalDateTime.now(); // Data e hora atual
 
         nfce.append("\n");
-       // nfce.append("NFC-e\n");
         nfce.append("Data: ").append(now.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
                 .append(" - Hora: ").append(now.format(DateTimeFormatter.ofPattern("HH:mm:ss\n")));
-       // nfce.append("Chave de Acesso: ").append("12345678901234567890123456789012345678901234\n"); // Exemplo
         nfce.append("--------------------------------------\n");
 
         // Dados do Emitente
         nfce.append("Emitente: ").append(fiscalData[1].isEmpty() ? " Não Informado" : fiscalData[1]).append("\n");
-      //  nfce.append("Empresa: ")
         nfce.append("CNPJ: ").append(fiscalData[0].isEmpty() ? "Não Informado" : fiscalData[0]).append("\n");
         nfce.append("Endereço: ").append(fiscalData[2].isEmpty() ? "Não Informado" : fiscalData[2]).append("\n");
-        nfce.append("Cidade: ").append(fiscalData[3].isEmpty() ? "Não Informado" : fiscalData[3]).append(" ")
-        .append("CEP: ").append(fiscalData[4].isEmpty() ? "Não Informado" : fiscalData[4]).append("\n");
-       // nfce
+        nfce.append("Cidade: ").append(fiscalData[3].isEmpty() ? "Não Informado" : fiscalData[3])
+                .append(" CEP: ").append(fiscalData[4].isEmpty() ? "Não Informado" : fiscalData[4]).append("\n");
         nfce.append("---------------------------------------\n");
 
         // Itens da Nota
         for (SelectedProduct product : selectedProducts.values()) {
             nfce.append(product.getCode()).append(" - ");
             nfce.append(product.getName()).append(" ");
-            nfce.append("R$").append(String.format("%.2f", product.getPrice())).append(" - ");
+            nfce.append("R$").append(String.format("%.2f", product.getTotalPrice())).append(" - "); // Alterado aqui
             nfce.append(" x ").append(product.getQuantity()).append("\n");
+
+            // Adiciona subprodutos
+            for (SubProduct sub : product.getSubProducts()) {
+                nfce.append("  + ").append(sub.getName()).append(" R$").append(String.format("%.2f", sub.getPrice())).append("\n");
+            }
         }
 
         nfce.append("---------------------------------------\n");
@@ -679,6 +886,8 @@ public class DashboardView extends Application {
     }
 
 
+
+
     private void openProductSearchModal(String searchText) {
         if (searchStage != null && searchStage.isShowing()) {
             searchStage.toFront(); // Coloca o modal de busca em primeiro plano
@@ -694,11 +903,9 @@ public class DashboardView extends Application {
             if (event.getCode() == KeyCode.ENTER) {
                 String selectedProduct = searchListView.getSelectionModel().getSelectedItem();
                 if (selectedProduct != null && !selectedProduct.isEmpty()) {
-                    // Remove a necessidade de pesquisar novamente
                     addProductToSalesListDirectly(selectedProduct);
                     searchStage.close();
                     focusOnSearchField(); // Move o foco de volta para o campo de pesquisa
-                    searchStage = null; // Limpar a variável após fechar
                 } else {
                     System.out.println("Nenhum produto selecionado no ENTER.");
                 }
@@ -710,21 +917,14 @@ public class DashboardView extends Application {
             if (event.getClickCount() == 2) {
                 String selectedProduct = searchListView.getSelectionModel().getSelectedItem();
                 if (selectedProduct != null && !selectedProduct.isEmpty()) {
-                    // Remove a necessidade de pesquisar novamente
                     addProductToSalesListDirectly(selectedProduct);
                     searchStage.close();
                     focusOnSearchField(); // Move o foco de volta para o campo de pesquisa
-                    searchStage = null; // Limpar a variável após fechar
                 } else {
                     System.out.println("Nenhum produto selecionado no clique duplo.");
                 }
             }
         });
-
-        vbox.getChildren().add(searchListView);
-        searchStage.setScene(new Scene(vbox, 300, 400));
-        searchStage.setTitle("Buscar Produtos");
-        searchStage.show();
 
         // Preenche a lista com os produtos encontrados
         List<String> products;
@@ -735,38 +935,77 @@ public class DashboardView extends Application {
         }
 
         searchListView.getItems().clear();
-        searchListView.getItems().addAll(products);
+        searchListView.getItems().addAll(products); // Adiciona os produtos à ListView
+
+        // Verifique se a lista está sendo preenchida corretamente
+        System.out.println("Produtos encontrados: " + products);
+
+        // Se houver produtos, selecione o primeiro item por padrão
+        if (!products.isEmpty()) {
+            searchListView.getSelectionModel().select(0);
+        }
+
+        // Adiciona a ListView ao VBox e configura a cena
+        vbox.getChildren().add(searchListView);
+        searchStage.setScene(new Scene(vbox, 300, 400));
+        searchStage.setTitle("Buscar Produtos");
+        searchStage.show();
     }
 
 
+
+
     private void addProductToSalesListDirectly(String productInfo) {
+        System.out.println("Produto Info: " + productInfo); // Para depuração
         if (productInfo == null || productInfo.trim().isEmpty()) {
             showAlert(Alert.AlertType.WARNING, "Código Inválido", "Por favor, insira um código de produto válido.");
             return;
         }
 
         String[] parts = productInfo.split(" - ");
-        if (parts.length != 2) {
+        if (parts.length != 3) { // Alterado para 3 partes considerando preço
             showAlert(Alert.AlertType.ERROR, "Erro de Formato", "Formato de produto retornado é inválido.");
             return;
         }
 
         String productCode = parts[0].trim();
         String productName = parts[1].trim();
-        double productPrice = databaseProduct.getProductPrice(productCode);
-
-        SelectedProduct selectedProduct = selectedProducts.get(productCode);
-        if (selectedProduct != null) {
-            selectedProduct.incrementQuantity();
-        } else {
-            selectedProduct = new SelectedProduct(0, productCode, productName, productPrice, 1, null);
-            selectedProducts.put(productCode, selectedProduct);
+        double productPrice;
+        try {
+            productPrice = Double.parseDouble(parts[2].trim());
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Erro de Preço", "O preço do produto é inválido.");
+            return;
         }
 
-        updateSalesListView();
-        updateTotalAmount();
-        updateButtonStates();
+        // Verifica se o produto possui subprodutos
+        SelectedProduct selectedProduct = selectedProducts.get(productCode);
+        if (databaseProduct.hasSubProducts(productCode)) {
+            // Se tiver subprodutos, adiciona o produto principal à lista e abre o modal para seleção de subprodutos
+            if (selectedProduct == null) {
+                selectedProduct = new SelectedProduct(0, productCode, productName, productPrice, 1, null);
+                selectedProducts.put(productCode, selectedProduct);
+            } else {
+                selectedProduct.incrementQuantity();
+            }
+            // Abrir modal de seleção de subprodutos
+            showSubProductsSelectionModal(productCode);
+        } else {
+            // Se não tiver subprodutos, adiciona diretamente à lista
+            if (selectedProduct == null) {
+                selectedProduct = new SelectedProduct(0, productCode, productName, productPrice, 1, null);
+                selectedProducts.put(productCode, selectedProduct);
+            } else {
+                selectedProduct.incrementQuantity();
+            }
+            updateSalesListView();
+            updateTotalAmount();
+            updateButtonStates();
+        }
     }
+
+
+
 
 
     private void focusOnSearchField() {
@@ -787,6 +1026,9 @@ public class DashboardView extends Application {
         double price = databaseProduct.getProductPrice(code);
         String group = databaseProduct.getProductGroup(code);
 
+        // Formata o preço para string com vírgula
+        String formattedPrice = String.valueOf(price).replace('.', ',');
+
         Label numberLabel = new Label("Código");
         TextField numberTextField = new TextField(code);
         numberTextField.setMaxWidth(40);
@@ -794,7 +1036,7 @@ public class DashboardView extends Application {
         TextField nameTextField = new TextField(name);
         nameTextField.setMaxWidth(250);
         Label priceLabel = new Label("Valor");
-        TextField priceTextField = new TextField(String.valueOf(price));
+        TextField priceTextField = new TextField(formattedPrice); // Use formattedPrice aqui
         priceTextField.setMaxWidth(60);
         Label groupLabel = new Label("Grupo");
         ComboBox<String> groupComboBox = new ComboBox<>();
@@ -806,7 +1048,7 @@ public class DashboardView extends Application {
         saveButton.setOnAction(e -> {
             String newCode = numberTextField.getText();
             String newName = nameTextField.getText();
-            String newPrice = priceTextField.getText();
+            String newPrice = priceTextField.getText().replace(',', '.'); // Troca vírgula por ponto para armazenar
             String newGroup = groupComboBox.getValue();
 
             databaseProduct.updateProductInDatabase(newCode, newName, newPrice, newGroup);
@@ -816,6 +1058,7 @@ public class DashboardView extends Application {
         vbox.getChildren().addAll(numberLabel, numberTextField, nameLabel, nameTextField, priceLabel, priceTextField, groupLabel, groupComboBox, saveButton);
         editStage.show();
     }
+
 
     private void addProductToSalesList(String code) {
         if (code == null || code.trim().isEmpty()) {
@@ -831,7 +1074,7 @@ public class DashboardView extends Application {
         }
 
         // Considera que a lista pode ter vários produtos, então selecionamos o primeiro
-        String productInfo = products.get(0); // Supondo que a pesquisa retornará uma lista de produtos
+        String productInfo = products.get(0);
         String[] parts = productInfo.split(" - ");
         if (parts.length != 2) {
             showAlert(Alert.AlertType.ERROR, "Erro de Formato", "Formato de produto retornado é inválido.");
@@ -840,6 +1083,13 @@ public class DashboardView extends Application {
 
         String productCode = parts[0].trim();
         String productName = parts[1].trim();
+
+        // Verifica se o produto tem subprodutos
+        boolean hasSubProducts = databaseProduct.checkIfProductHasSubProducts(productCode); // Metodo para verificar
+
+        if (hasSubProducts) {
+            showSubProductsSelectionModal(productCode); // Chama o metodo para mostrar o modal com subprodutos
+        }
 
         // Assume-se que o preço do produto é obtido do banco de dados
         double productPrice = databaseProduct.getProductPrice(productCode);
@@ -860,6 +1110,72 @@ public class DashboardView extends Application {
     }
 
 
+    //
+  private void showSubProductsSelectionModal(String productCode) {
+      Stage subProductsStage = new Stage();
+      VBox vbox = new VBox(10);
+      ListView<CheckBox> subProductsListView = new ListView<>();
+
+      List<SubProduct> subProducts = databaseProduct.getSubProducts(); // Metodo que busca os subprodutos
+
+      for (SubProduct subProduct : subProducts) {
+          CheckBox checkBox = new CheckBox(subProduct.getName() + " - " + subProduct.getPrice());
+          subProductsListView.getItems().add(checkBox);
+      }
+
+      Button addButton = new Button("Adicionar Subprodutos");
+      addButton.setOnAction(e -> {
+          for (CheckBox checkBox : subProductsListView.getItems()) {
+              if (checkBox.isSelected()) {
+                  // Adiciona o subproduto à lista de vendas
+                  addSubProductToSalesList(productCode, checkBox.getText());
+              }
+          }
+          subProductsStage.close();
+      });
+
+      vbox.getChildren().addAll(subProductsListView, addButton);
+      subProductsStage.setScene(new Scene(vbox, 300, 400));
+      subProductsStage.setTitle("Selecione os Subprodutos");
+      subProductsStage.show();
+  }
+
+    private void addSubProductToSalesList(String productCode, String subProductInfo) {
+        // Parse o subproduto para obter o preço
+        String[] parts = subProductInfo.split(" - ");
+        if (parts.length != 2) {
+            showAlert(Alert.AlertType.ERROR, "Erro de Formato", "Formato de subproduto retornado é inválido.");
+            return;
+        }
+
+        String subProductName = parts[0].trim();
+        double subProductPrice;
+
+        // Tenta converter o preço para double
+        try {
+            subProductPrice = Double.parseDouble(parts[1].trim());
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Erro de Preço", "Preço do subproduto é inválido.");
+            return;
+        }
+
+        // Adiciona o subproduto ao produto principal
+        SelectedProduct selectedProduct = selectedProducts.get(productCode);
+
+        if (selectedProduct != null) {
+            selectedProduct.addSubProduct(subProductName, subProductPrice); // Método para adicionar subproduto e preço corretamente
+        } else {
+            selectedProduct = new SelectedProduct(0, productCode, subProductName, subProductPrice, 1, null);
+            selectedProducts.put(productCode, selectedProduct);
+        }
+
+        // Atualiza o total após adicionar o subproduto
+        updateTotalAmount();
+
+        // Atualiza a interface de vendas
+        updateSalesListView();
+        updateButtonStates();
+    }
 
 
 
